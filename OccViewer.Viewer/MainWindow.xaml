@@ -3,10 +3,87 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:OccViewer.Viewer"
+        xmlns:local="clr-namespace:OccViewer.Viewer" 
+        xmlns:ic="clr-namespace:FluentIcons.WPF;assembly=FluentIcons.WPF"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <DockPanel x:Name="ViewerRoot" LastChildFill="True" Background="Green">
-        <Button DockPanel.Dock="Top" x:Name="Import" Content="Import" Click="Import_Click" />
-    </DockPanel>
+    <Grid x:Name="ViewerRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Menu bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" Click="Import_Click" />
+                <MenuItem Header="_Save" />
+                <MenuItem Header="_Export">
+                    <MenuItem Header="Iges"/>
+                    <MenuItem Header="Step"/>
+                    <Separator />
+                    <MenuItem Header="Image"/>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="_Exit" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" />
+            </MenuItem>
+        </Menu>
+        
+        <!-- Tool bar -->
+        <ToolBarTray Background="White" Grid.Row="1">
+            <ToolBar x:Name="FileToolBar"  Background="White" BandIndex="0">
+                <Button ToolTip="Open File" Click="Import_Click">
+                    <ic:SymbolIcon Symbol="Document"/>
+                </Button>
+                <Button ToolTip="Save As">
+                    <ic:SymbolIcon Symbol="Save"/>
+                </Button>
+            </ToolBar>
+            <ToolBar x:Name="SceneToolBar" Background="White" BandIndex="1">
+                <Button ToolTip="Fit All" x:Name="BtnFitAll" Click="BtnFitAll_Click">
+                    <ic:SymbolIcon Symbol="ScaleFill"/>
+                </Button>
+                <Button ToolTip="Zoom Window" x:Name="BtnZoomWindow" Click="BtnZoomWindow_Click">
+                    <ic:SymbolIcon Symbol="ZoomIn"/>
+                </Button>
+                <Button ToolTip="Dynamic Zoom" x:Name="BtnDynamicZoom" Click="BtnDynamicZoom_Click">
+                    <ic:SymbolIcon Symbol="SearchSquare"/>
+                </Button>
+                <Button ToolTip="Panning" x:Name="BtnPan" Click="BtnPan_Click">
+                    <ic:SymbolIcon Symbol="ArrowMove"/>
+                </Button>
+                <Button ToolTip="Rotate" x:Name="BtnRotate" Click="BtnRotate_Click">
+                    <ic:SymbolIcon Symbol="CubeRotate"/>
+                </Button>
+            </ToolBar>
+            <ToolBar x:Name="ViewToolBar" Background="White" BandIndex="2">
+                <Button ToolTip="Front" x:Name="BtnFront" Content="Front" Click="BtnFront_Click"></Button>
+                <Button ToolTip="Back" x:Name="BtnBack" Content="Back" Click="BtnBack_Click"></Button>
+                <Button ToolTip="Top" x:Name="BtnTop" Content="Top" Click="BtnTop_Click"></Button>
+                <Button ToolTip="Bottom" x:Name="BtnBottom" Content="Bottom" Click="BtnBottom_Click"></Button>
+                <Button ToolTip="Left" x:Name="BtnLeft" Content="Left" Click="BtnLeft_Click"></Button>
+                <Button ToolTip="Right" x:Name="BtnRight" Content="Right" Click="BtnRight_Click"></Button>
+            </ToolBar>
+            <ToolBar x:Name="RenderToolBar" Background="White" BandIndex="3">
+                <Button ToolTip="Wireframe" x:Name="BtnWireframe" Content="Wireframe" Click="BtnWireframe_Click"></Button>
+                <Button ToolTip="Shade" x:Name="BtnShade" Content="Shade" Click="BtnShade_Click"></Button>
+                <Button ToolTip="Set Color" x:Name="BtnSetColor" Click="BtnSetColor_Click">
+                    <ic:SymbolIcon Symbol="Color"/>
+                </Button>
+                <Button ToolTip="Set Material" x:Name="BtnSetMaterial" Content="Material" Click="BtnSetMaterial_Click"></Button>
+                <Button ToolTip="Set Transparency" x:Name="BtnSetTransparency" Content="Transparency" Click="BtnSetTransparency_Click"></Button>
+            </ToolBar>
+        </ToolBarTray>
+        
+        <!-- Viewer -->
+        <Grid x:Name="ViewerGrid" Grid.Row="2" HorizontalAlignment="Stretch"
+              MouseDown="ViewerGrid_MouseDown" 
+              MouseUp="ViewerGrid_MouseUp" 
+              MouseMove="ViewerGrid_MouseMove" 
+              SizeChanged="ViewerGrid_SizeChanged"></Grid> 
+    </Grid>
 </Window>

@@ -119,6 +119,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OccViewer.Viewer\OccViewer.Viewer.csproj">
       <Project>{2402e268-0368-4fb9-a8b0-440335eb9274}</Project>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -133,5 +134,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Viewer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentIcons.WPF">
+      <Version>1.1.207</Version>
+    </PackageReference>
   </ItemGroup>
 </Project>

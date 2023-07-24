@@ -19,6 +19,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="FluentIcons.WPF" Version="1.1.207" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\OccViewer.OccProxy\OccViewer.OccProxy.vcxproj">
 		  <Private>True</Private>
 		</ProjectReference>
