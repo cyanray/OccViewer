@@ -61,16 +61,19 @@
                 </Button>
             </ToolBar>
             <ToolBar x:Name="ViewToolBar" Background="White" BandIndex="2">
-                <Button ToolTip="Front" x:Name="BtnFront" Content="Front" Click="BtnFront_Click"></Button>
-                <Button ToolTip="Back" x:Name="BtnBack" Content="Back" Click="BtnBack_Click"></Button>
-                <Button ToolTip="Top" x:Name="BtnTop" Content="Top" Click="BtnTop_Click"></Button>
-                <Button ToolTip="Bottom" x:Name="BtnBottom" Content="Bottom" Click="BtnBottom_Click"></Button>
-                <Button ToolTip="Left" x:Name="BtnLeft" Content="Left" Click="BtnLeft_Click"></Button>
-                <Button ToolTip="Right" x:Name="BtnRight" Content="Right" Click="BtnRight_Click"></Button>
+                <Button ToolTip="Front View" x:Name="BtnFront" Content="Front" Click="BtnFront_Click"></Button>
+                <Button ToolTip="Back View" x:Name="BtnBack" Content="Back" Click="BtnBack_Click"></Button>
+                <Button ToolTip="Top View" x:Name="BtnTop" Content="Top" Click="BtnTop_Click"></Button>
+                <Button ToolTip="Bottom View" x:Name="BtnBottom" Content="Bottom" Click="BtnBottom_Click"></Button>
+                <Button ToolTip="Left View" x:Name="BtnLeft" Content="Left" Click="BtnLeft_Click"></Button>
+                <Button ToolTip="Right View" x:Name="BtnRight" Content="Right" Click="BtnRight_Click"></Button>
+                <Button ToolTip="AXO View" x:Name="BtnAxoView" Content="Axo" Click="BtnAxoView_Click"></Button>
             </ToolBar>
             <ToolBar x:Name="RenderToolBar" Background="White" BandIndex="3">
                 <Button ToolTip="Wireframe" x:Name="BtnWireframe" Content="Wireframe" Click="BtnWireframe_Click"></Button>
                 <Button ToolTip="Shade" x:Name="BtnShade" Content="Shade" Click="BtnShade_Click"></Button>
+                <Button ToolTip="RayTracing" x:Name="BtnRayTracing" Content="RayTracing" Click="BtnRayTracing_Click"></Button>
+                <Button ToolTip="AntiAliasing" x:Name="BtnAntiAliasing" Content="AntiAliasing" Click="BtnAntiAliasing_Click"></Button>
                 <Button ToolTip="Set Color" x:Name="BtnSetColor" Click="BtnSetColor_Click">
                     <ic:SymbolIcon Symbol="Color"/>
                 </Button>
@@ -84,6 +87,12 @@
               MouseDown="ViewerGrid_MouseDown" 
               MouseUp="ViewerGrid_MouseUp" 
               MouseMove="ViewerGrid_MouseMove" 
-              SizeChanged="ViewerGrid_SizeChanged"></Grid> 
+              SizeChanged="ViewerGrid_SizeChanged">
+            <Grid.ContextMenu>
+                <ContextMenu x:Name="ViewerContextMenu">
+                    <MenuItem x:Name="MenuChangeBackgroundColor" Header="Background Color" Click="MenuChangeBackgroundColor_Click" />
+                </ContextMenu>
+            </Grid.ContextMenu>
+        </Grid> 
     </Grid>
 </Window>

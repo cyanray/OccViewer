@@ -12,7 +12,18 @@ namespace OccViewerProxy
 	class EXPORTED Viewer
 	{
 	public:
+		Viewer();
+		~Viewer();
+
+		void* GetViewPtr();
+
+		void* GetAISContextPtr();
+
 		void ShowDialog();
+
+	private:
+		class Impl;
+		Impl* m_pImpl;	
 	};
 }
 

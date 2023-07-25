@@ -65,9 +65,7 @@ namespace OccViewer.Viewer
 
         void ViewerGrid_MouseMove(object sender, MouseEventArgs e)
         {
-
             ActiveViewer?.OnMouseMove(ViewerGrid, e);
-
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)
@@ -130,6 +128,11 @@ namespace OccViewer.Viewer
             ActiveViewer?.RightView();
         }
 
+        private void BtnAxoView_Click(object sender, RoutedEventArgs e)
+        {
+            ActiveViewer?.AxoView();
+        }
+
         private void BtnWireframe_Click(object sender, RoutedEventArgs e)
         {
             ActiveViewer?.Wireframe();
@@ -142,7 +145,28 @@ namespace OccViewer.Viewer
 
         private void BtnSetColor_Click(object sender, RoutedEventArgs e)
         {
+            if (ActiveViewer == null) return;
+            System.Windows.Forms.ColorDialog ColDlg = new()
+            {
+                Color = ActiveViewer.CurrentObjectColor
+            };
+            if (ColDlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ActiveViewer.CurrentObjectColor = ColDlg.Color;
+            }
+        }
 
+        private void MenuChangeBackgroundColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (ActiveViewer == null) return;
+            System.Windows.Forms.ColorDialog ColDlg = new()
+            {
+                Color = ActiveViewer.BackgroundColor
+            };
+            if (ColDlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ActiveViewer.BackgroundColor = ColDlg.Color;
+            }
         }
 
         private void BtnSetMaterial_Click(object sender, RoutedEventArgs e)
@@ -153,6 +177,16 @@ namespace OccViewer.Viewer
         private void BtnSetTransparency_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void BtnRayTracing_Click(object sender, RoutedEventArgs e)
+        {
+            ActiveViewer?.ToggleRayTracing();
+        }
+
+        private void BtnAntiAliasing_Click(object sender, RoutedEventArgs e)
+        {
+            ActiveViewer?.ToggleAntiAliasing();
         }
     }
 }
