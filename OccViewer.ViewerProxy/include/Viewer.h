@@ -15,9 +15,9 @@ namespace OccViewerProxy
 		Viewer();
 		~Viewer();
 
-		void* GetViewPtr();
+		void* GetViewPtr() const;
 
-		void* GetAISContextPtr();
+		void* GetAISContextPtr() const;
 
 		void ShowDialog();
 

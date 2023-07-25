@@ -124,12 +124,13 @@ namespace OccViewer.Viewer
         private int m_Ymax;
         private int m_ButtonDownX;
         private int m_ButtonDownY;
+
         public OCCViewer()
         {
             View = new OCCTProxyD3D();
             View.InitOCCTProxy();
             CurrentMode = CurrentAction3d.Nothing;
-            IsRectVisible = false;
+            IsRectVisible = true;
             DegenerateMode = true;
         }
 
@@ -481,8 +482,7 @@ namespace OccViewer.Viewer
 
         public void OnMouseDown(System.Windows.IInputElement sender, MouseButtonEventArgs e)
         {
-            Grid? aGrid = sender as Grid;
-            if (aGrid == null) return;
+            if (sender is not Grid aGrid) return;
 
             System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
             Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));

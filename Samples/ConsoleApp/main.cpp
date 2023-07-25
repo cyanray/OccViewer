@@ -112,6 +112,10 @@ Handle(AIS_InteractiveContext) CastAISContextPtr(void* ptr)
 	return Handle(AIS_InteractiveContext)::handle(static_cast<AIS_InteractiveContext*>(ptr));
 }
 
+std::tuple<Handle(V3d_View), Handle(AIS_InteractiveContext)> CastHandles(const OccViewerProxy::Viewer& viewer)
+{
+    return { CastViewPtr(viewer.GetViewPtr()), CastAISContextPtr(viewer.GetAISContextPtr()) };
+}
 
 void DisplayObjects(Handle(AIS_InteractiveContext) context, const AISObjects& objs)
 {
@@ -129,8 +133,7 @@ int main()
     auto curves = MakeCurves();
 
     OccViewerProxy::Viewer viewer;
-    auto view = CastViewPtr(viewer.GetViewPtr());
-    auto context = CastAISContextPtr(viewer.GetAISContextPtr());
+    auto [view, context] = CastHandles(viewer);
     context->RemoveAll(Standard_False);
     DisplayObjects(context, curves);
     view->Redraw();

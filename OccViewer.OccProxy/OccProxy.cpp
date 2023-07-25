@@ -346,7 +346,7 @@ public:
 	/// </summary>
 	int GetBGColR()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		BackgroundColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[0];
 	}
@@ -356,7 +356,7 @@ public:
 	/// </summary>
 	int GetBGColG()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		BackgroundColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[1];
 	}
@@ -366,7 +366,7 @@ public:
 	/// </summary>
 	int GetBGColB()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		BackgroundColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[2];
 	}
@@ -543,7 +543,7 @@ public:
 	/// </summary>
 	int GetObjColR()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		ObjectColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[0];
 	}
@@ -553,7 +553,7 @@ public:
 	/// </summary>
 	int GetObjColG()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		ObjectColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[1];
 	}
@@ -563,7 +563,7 @@ public:
 	/// </summary>
 	int GetObjColB()
 	{
-		int anRgb[3];
+		int anRgb[3]{};
 		ObjectColor(anRgb[0], anRgb[1], anRgb[2]);
 		return anRgb[2];
 	}

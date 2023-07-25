@@ -35,12 +35,12 @@ namespace OccViewerProxy
 		delete m_pImpl;
 	}
 
-	void* Viewer::GetViewPtr()
+	void* Viewer::GetViewPtr() const
 	{
 		return m_pImpl->Viewer->GetViewPtr().ToPointer();
 	}
 
-	void* Viewer::GetAISContextPtr()
+	void* Viewer::GetAISContextPtr() const
 	{
 		return m_pImpl->Viewer->GetAISContextPtr().ToPointer();
 	}
