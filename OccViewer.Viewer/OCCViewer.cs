@@ -81,6 +81,8 @@ namespace OccViewer.Viewer
 
         public bool IsDeleteEnabled { get; private set; }
 
+        public bool IsTriedronEnabled { get; private set; } = true;
+
         public Color CurrentObjectColor
         {
             get
@@ -436,6 +438,17 @@ namespace OccViewer.Viewer
         public void SetRenderRation(float ration)
         {
             View.SetRenderRation(ration);
+        }
+
+        public void SetMsaaSamples(int samples)
+        {
+            View.SetMsaaSamples(samples);
+        }
+
+        public void DisplayTriedron(bool show)
+        {
+            IsTriedronEnabled = show;
+            View.DisplayTriedron(show);
         }
 
         protected void MultiDragEvent(int x, int y, int theState)

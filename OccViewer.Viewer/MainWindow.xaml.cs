@@ -189,5 +189,10 @@ namespace OccViewer.Viewer
         {
             ActiveViewer?.ToggleAntiAliasing();
         }
+
+        private void ToggleTriedron_Click(object sender, RoutedEventArgs e)
+        {
+            ActiveViewer?.DisplayTriedron(!ActiveViewer!.IsTriedronEnabled);
+        }
     }
 }

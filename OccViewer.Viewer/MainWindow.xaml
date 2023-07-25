@@ -28,6 +28,9 @@
                 <Separator />
                 <MenuItem Header="_Exit" />
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="ToggleTriedron" Click="ToggleTriedron_Click" />
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" />
             </MenuItem>

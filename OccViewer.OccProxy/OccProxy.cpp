@@ -115,16 +115,12 @@ public:
 		myAISContext()->UpdateCurrentViewer();
 		myView()->MustBeResized();
 
-		// Display face boundary edge, TODO: move to separate method
-		myAISContext()->DefaultDrawer()->SetFaceBoundaryDraw(true);
-		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NameOfColor::Quantity_NOC_BLACK);
-		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
-
-		// TODO: Anti-aliasing
-		myView()->ChangeRenderingParams().NbMsaaSamples = 8;
-
-		// TODO: toggle on/off
-		myView()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
+		// Display face boundary edge
+		DisplayFaceBoundaryEdge(true);
+		// Set MSAA samples to Anti-Aliasing
+		SetMsaaSamples(8);
+		// Display Triedron
+		DisplayTriedron(true);
 		return true;
 	}
 
@@ -762,6 +758,32 @@ public:
 	{
 		myView()->ChangeRenderingParams().RenderResolutionScale = ration;
 		UpdateCurrentViewer();
+	}
+
+	void DisplayFaceBoundaryEdge(bool show)
+	{
+		myAISContext()->DefaultDrawer()->SetFaceBoundaryDraw(show);
+		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NameOfColor::Quantity_NOC_BLACK);
+		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
+		UpdateCurrentViewer();
+	}
+
+	void DisplayTriedron(bool show)
+	{
+		if (show)
+		{
+			myView()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
+		}
+		else
+		{
+			myView()->TriedronErase();
+		}
+		UpdateCurrentViewer();
+	}
+
+	void SetMsaaSamples(int samples)
+	{
+		myView()->ChangeRenderingParams().NbMsaaSamples = samples;
 	}
 
 	System::IntPtr GetViewPtr()
