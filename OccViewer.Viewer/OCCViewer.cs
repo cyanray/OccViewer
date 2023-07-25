@@ -433,6 +433,11 @@ namespace OccViewer.Viewer
             return View.GetAISContextPtr();
         }
 
+        public void SetRenderRation(float ration)
+        {
+            View.SetRenderRation(ration);
+        }
+
         protected void MultiDragEvent(int x, int y, int theState)
         {
             if (theState == -1) //mouse is down

@@ -750,6 +750,12 @@ public:
 		UpdateCurrentViewer();
 	}
 
+	void SetRenderRation(Standard_ShortReal ration)
+	{
+		myView()->ChangeRenderingParams().RenderResolutionScale = ration;
+		UpdateCurrentViewer();
+	}
+
 	System::IntPtr GetViewPtr()
 	{
 		return System::IntPtr(myView().get());
