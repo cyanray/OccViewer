@@ -120,6 +120,9 @@ public:
 		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NameOfColor::Quantity_NOC_BLACK);
 		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
 
+		// TODO: Anti-aliasing
+		myView()->ChangeRenderingParams().NbMsaaSamples = 8;
+
 		// TODO: toggle on/off
 		myView()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
 		return true;
