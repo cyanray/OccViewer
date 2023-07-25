@@ -471,7 +471,8 @@ namespace OccViewer.Viewer
             Grid? aGrid = sender as Grid;
             if (aGrid == null) return;
 
-            Point p = new((int)e.GetPosition(aGrid).X, (int)e.GetPosition(aGrid).Y);
+            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
+            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
 
             // to avoid the context menu opening
             aGrid.ContextMenu.Visibility = System.Windows.Visibility.Collapsed;
@@ -535,7 +536,8 @@ namespace OccViewer.Viewer
 
         public void OnMouseUp(System.Windows.IInputElement sender, MouseButtonEventArgs e)
         {
-            Point p = new((int)e.GetPosition(sender).X, (int)e.GetPosition(sender).Y);
+            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
+            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
 
             if (e.ChangedButton == MouseButton.Left)
             {
@@ -628,7 +630,8 @@ namespace OccViewer.Viewer
 
         public void OnMouseMove(System.Windows.IInputElement sender, System.Windows.Input.MouseEventArgs e)
         {
-            Point p = new((int)e.GetPosition(sender).X, (int)e.GetPosition(sender).Y);
+            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
+            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
 
             if (e.LeftButton == MouseButtonState.Pressed) //left button is pressed
             {

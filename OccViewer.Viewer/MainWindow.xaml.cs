@@ -49,8 +49,9 @@ namespace OccViewer.Viewer
 
         private void ViewerGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            D3DViewer?.Resize(Convert.ToInt32(e.NewSize.Width),
-                              Convert.ToInt32(e.NewSize.Height));
+            DpiScale dpi = VisualTreeHelper.GetDpi(this);
+            D3DViewer?.Resize(Convert.ToInt32(e.NewSize.Width * dpi.DpiScaleX),
+                              Convert.ToInt32(e.NewSize.Height * dpi.DpiScaleY));
         }
 
         void ViewerGrid_MouseUp(object sender, MouseButtonEventArgs e)
