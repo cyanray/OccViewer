@@ -13,6 +13,7 @@
 #include <Graphic3d_TextureParams.hxx>
 #include <D3DHost_GraphicDriver.hxx>
 #include <D3DHost_View.hxx>
+#include <Graphic3d_GraduatedTrihedron.hxx>
 //for object display
 #include <V3d_Viewer.hxx>
 #include <V3d_View.hxx>
@@ -113,6 +114,8 @@ public:
 		myAISContext() = new AIS_InteractiveContext(myViewer());
 		myAISContext()->UpdateCurrentViewer();
 		myView()->MustBeResized();
+
+		myView()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
 		return true;
 	}
 
