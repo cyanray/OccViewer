@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <Viewer.h>
-#include <Windows.h>
 
 #include <gp_Pnt.hxx>
 #include <Geom_BSplineCurve.hxx>
@@ -23,12 +22,17 @@
 #include <TColgp_Array1OfPnt.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
+#include <TopoDS_Wire.hxx>
+#include <TopoDS_Face.hxx>
 #include <AIS_ColoredShape.hxx>
 #include <AIS_Point.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <AIS_InteractiveContext.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <V3d_View.hxx>
+#include <BRepTools.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
 
 using namespace std;
 
@@ -102,6 +106,20 @@ auto MakeCurves() -> AISObjects
     return myObject3d;
 }
 
+AISObjects MakePolygon()
+{
+    AISObjects result;
+    gp_Pnt point1 = gp_Pnt(0, 0, 0);
+    gp_Pnt point2 = gp_Pnt(0, 100, 0);
+    gp_Pnt point3 = gp_Pnt(120, 100, 0);
+    gp_Pnt point4 = gp_Pnt(120, 0, 0);
+    TopoDS_Wire wire = BRepBuilderAPI_MakePolygon(point1, point2, point3, point4 , Standard_True);
+    Handle(AIS_ColoredShape) aisFace = new AIS_ColoredShape(BRepBuilderAPI_MakeFace(wire, Standard_True).Shape());
+    aisFace->SetColor(Quantity_Color(Quantity_NOC_RED));
+    result.Append(aisFace);
+    return result;
+}
+
 Handle(V3d_View) CastViewPtr(void* ptr)
 {
     return Handle(V3d_View)::handle(static_cast<V3d_View*>(ptr));
@@ -128,16 +146,25 @@ void DisplayObjects(Handle(AIS_InteractiveContext) context, const AISObjects& ob
 
 int main()
 {
-    HRESULT result = CoInitialize(NULL);
     std::cout << "Hello World!\n";
-    auto curves = MakeCurves();
+    auto shapes = MakePolygon();
 
     OccViewerProxy::Viewer viewer;
     auto [view, context] = CastHandles(viewer);
     context->RemoveAll(Standard_False);
-    DisplayObjects(context, curves);
+    DisplayObjects(context, shapes);
     view->Redraw();
     view->FitAll();
     viewer.ShowDialog();
+
+    cin.get();
+    // Close the dialog window does not destroy the viewer instance
+    // Call ShowDialog again is fine
+    viewer.ShowDialog();
+
+    cin.get();
+    // Create a new viewer
+    OccViewerProxy::Viewer viewer2;
+    viewer2.ShowDialog();
 }
 

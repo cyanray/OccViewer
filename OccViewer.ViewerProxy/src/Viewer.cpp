@@ -3,6 +3,11 @@
 #using <WindowsBase.dll>
 #include <utility>
 #include <vcclr.h>
+#include <thread>
+#include <Windows.h>
+
+#pragma comment(lib, "Ole32.lib")
+
 using namespace System;
 using namespace System;
 using namespace System::Windows;
@@ -10,24 +15,33 @@ using namespace OccViewer::Viewer;
 
 namespace OccViewerProxy
 {
-	public ref class MyApplication : public Application
+	ref class EventReceiver
 	{
+	public:
+		void OnClosing(System::Object^ sender, System::ComponentModel::CancelEventArgs^ e)
+		{
+			e->Cancel = true;
+			((Window^)sender)->Hide();
+		}
 	};
 
 	class Viewer::Impl
 	{
 	public:
-		Impl() :Window(gcnew MainWindow()), App(gcnew MyApplication())
+		Impl() :Window(gcnew MainWindow())
 		{
 			Viewer = Window->ActiveViewer;
 		}
-		gcroot<MyApplication^> App;
 		gcroot<MainWindow^> Window;
 		gcroot<OccViewer::Viewer::OCCViewer^> Viewer;
 	};
 
-	Viewer::Viewer() :m_pImpl(new Impl())
+	Viewer::Viewer()
 	{
+		HRESULT result = CoInitialize(NULL);
+		m_pImpl = new Impl();
+		EventReceiver^ er = gcnew EventReceiver();
+		m_pImpl->Window->Closing += gcnew System::ComponentModel::CancelEventHandler(er, &EventReceiver::OnClosing);
 	}
 
 	Viewer::~Viewer()
@@ -47,7 +61,7 @@ namespace OccViewerProxy
 
 	void Viewer::ShowDialog()
 	{
-		m_pImpl->App->Run(m_pImpl->Window);
+		m_pImpl->Window->ShowDialog();
 	}
 }
 

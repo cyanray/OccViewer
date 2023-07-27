@@ -1,5 +1,8 @@
 #pragma once
+
+#if defined(OccViewerProxy_LIB_EXPORT)
 #pragma unmanaged
+#endif
 
 #if defined(OccViewerProxy_LIB_EXPORT)
 #define EXPORTED __declspec(dllexport)
@@ -27,4 +30,6 @@ namespace OccViewerProxy
 	};
 }
 
+#if defined(OccViewerProxy_LIB_EXPORT)
 #pragma managed
+#endif
