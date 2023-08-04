@@ -19,13 +19,15 @@ namespace OccViewer.Viewer
 
         private bool m_IsFailed = false;
 
-        public OCCViewer? Viewer { get; private set; }
+        public OCCViewer Viewer { get; private set; }
 
         public D3DImage Image => m_D3DImage;
 
         /// <summary> Creates new Direct3D-based OCCT viewer. </summary>
         public D3DViewer()
         {
+            Viewer = new OCCViewer();
+
             m_D3DImage.IsFrontBufferAvailableChanged
               += new DependencyPropertyChangedEventHandler(OnIsFrontBufferAvailableChanged);
 
@@ -56,8 +58,6 @@ namespace OccViewer.Viewer
 
             if (m_D3DImage.IsFrontBufferAvailable)
             {
-                Viewer = new OCCViewer();
-
                 if (!Viewer.InitViewer())
                 {
                     // TODO: handle error

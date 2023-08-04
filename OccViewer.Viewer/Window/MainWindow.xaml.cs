@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using OccViewer.Viewer.Common;
+using OccViewer.Viewer.Shortcut;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,7 +28,7 @@ namespace OccViewer.Viewer
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public OCCViewer? ActiveViewer { get; private set; }
+        public OCCViewer ActiveViewer { get; private set; }
 
         private D3DViewer D3DViewer { get; set; }
 
@@ -43,40 +44,40 @@ namespace OccViewer.Viewer
             InitViewer();
         }
 
-        [MemberNotNull(nameof(D3DViewer))]
+        [MemberNotNull(nameof(D3DViewer), nameof(ActiveViewer))]
         private void InitViewer()
         {
             D3DViewer = new D3DViewer();
             ImageBrush anImage = new(D3DViewer.Image);
             ViewerGrid.Background = anImage;
             ActiveViewer = D3DViewer.Viewer;
+            ActiveViewer.ActionShortcuts = new IntuitiveActionShortcuts();
         }
 
         private void ViewerGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             DpiScale dpi = VisualTreeHelper.GetDpi(this);
-            D3DViewer?.Resize(Convert.ToInt32(e.NewSize.Width * dpi.DpiScaleX),
+            D3DViewer.Resize(Convert.ToInt32(e.NewSize.Width * dpi.DpiScaleX),
                               Convert.ToInt32(e.NewSize.Height * dpi.DpiScaleY));
         }
 
         void ViewerGrid_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            ActiveViewer?.HandleMouseUp(ViewerGrid, e);
+            ActiveViewer.HandleMouseUp(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            ActiveViewer?.HandleMouseDown(ViewerGrid, e);
+            ActiveViewer.HandleMouseDown(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            ActiveViewer?.HandleMouseMove(ViewerGrid, e);
+            ActiveViewer.HandleMouseMove(ViewerGrid, e);
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)
         {
-            if (ActiveViewer == null) return;
             OpenFileDialog dialog = new()
             {
                 Filter = FileFilterConstants.ImportFilterString
@@ -112,7 +113,6 @@ namespace OccViewer.Viewer
 
         private void Export_Click(object sender, RoutedEventArgs e)
         {
-            if (ActiveViewer == null) return;
             SaveFileDialog dialog = new()
             {
                 Filter = FileFilterConstants.ExportFilterString
@@ -134,77 +134,76 @@ namespace OccViewer.Viewer
 
         private void BtnFitAll_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.FitAll();
+            ActiveViewer.FitAll();
         }
 
         private void BtnZoomWindow_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.ZoomWindow();
+            ActiveViewer.ZoomWindow();
         }
 
         private void BtnDynamicZoom_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.DynamicZooming();
+            ActiveViewer.DynamicZooming();
         }
 
         private void BtnPan_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.DynamicPanning();
+            ActiveViewer.DynamicPanning();
         }
 
         private void BtnRotate_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.DynamicRotation();
+            ActiveViewer.DynamicRotation();
         }
 
         private void BtnFront_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.FrontView();
+            ActiveViewer.FrontView();
         }
 
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.BackView();
+            ActiveViewer.BackView();
         }
 
         private void BtnTop_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.TopView();
+            ActiveViewer.TopView();
         }
 
         private void BtnBottom_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.BottomView();
+            ActiveViewer.BottomView();
         }
 
         private void BtnLeft_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.LeftView();
+            ActiveViewer.LeftView();
         }
 
         private void BtnRight_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.RightView();
+            ActiveViewer.RightView();
         }
 
         private void BtnAxoView_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.AxoView();
+            ActiveViewer.AxoView();
         }
 
         private void BtnWireframe_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.Wireframe();
+            ActiveViewer.Wireframe();
         }
 
         private void BtnShade_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.Shading();
+            ActiveViewer.Shading();
         }
 
         private void BtnSetColor_Click(object sender, RoutedEventArgs e)
         {
-            if (ActiveViewer == null) return;
             System.Windows.Forms.ColorDialog ColDlg = new()
             {
                 Color = ActiveViewer.CurrentObjectColor
@@ -217,7 +216,6 @@ namespace OccViewer.Viewer
 
         private void MenuChangeBackgroundColor_Click(object sender, RoutedEventArgs e)
         {
-            if (ActiveViewer == null) return;
             System.Windows.Forms.ColorDialog ColDlg = new()
             {
                 Color = ActiveViewer.BackgroundColor
@@ -240,22 +238,36 @@ namespace OccViewer.Viewer
 
         private void BtnRayTracing_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.ToggleRayTracing();
+            ActiveViewer.ToggleRayTracing();
         }
 
         private void BtnAntiAliasing_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.ToggleAntiAliasing();
+            ActiveViewer.ToggleAntiAliasing();
         }
 
         private void ToggleTriedron_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.DisplayTriedron(!ActiveViewer!.IsTriedronEnabled);
+            ActiveViewer.DisplayTriedron(!ActiveViewer!.IsTriedronEnabled);
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void UseDefaultShortcut_Click(object sender, RoutedEventArgs e)
+        {
+            UseDefaultShortcut.IsChecked = true;
+            UseIntuitiveShortcut.IsChecked = false;
+            ActiveViewer.ActionShortcuts = new DefaultActionShortcuts();
+        }
+
+        private void UseIntuitiveShortcut_Click(object sender, RoutedEventArgs e)
+        {
+            UseDefaultShortcut.IsChecked = false;
+            UseIntuitiveShortcut.IsChecked = true;
+            ActiveViewer.ActionShortcuts = new IntuitiveActionShortcuts();
         }
     }
 }

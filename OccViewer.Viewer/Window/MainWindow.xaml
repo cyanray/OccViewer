@@ -25,6 +25,12 @@
             <MenuItem Header="_View">
                 <MenuItem Header="ToggleTriedron" Click="ToggleTriedron_Click" />
             </MenuItem>
+            <MenuItem Header="_Tools" >
+                <MenuItem Header="Shortcut">
+                    <MenuItem Header="Default" IsCheckable="True" IsChecked="False" x:Name="UseDefaultShortcut" Click="UseDefaultShortcut_Click" />
+                    <MenuItem Header="Intuitive" IsCheckable="True" IsChecked="True" x:Name="UseIntuitiveShortcut" Click="UseIntuitiveShortcut_Click" />
+                </MenuItem>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" />
             </MenuItem>
