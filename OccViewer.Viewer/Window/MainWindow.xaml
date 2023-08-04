@@ -18,15 +18,9 @@
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open" Click="Import_Click" />
-                <MenuItem Header="_Save" />
-                <MenuItem Header="_Export">
-                    <MenuItem Header="Iges"/>
-                    <MenuItem Header="Step"/>
-                    <Separator />
-                    <MenuItem Header="Image"/>
-                </MenuItem>
+                <MenuItem Header="_Export" Click="Export_Click" />
                 <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit" Click="Exit_Click" />
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="ToggleTriedron" Click="ToggleTriedron_Click" />
@@ -42,7 +36,7 @@
                 <Button ToolTip="Open File" Click="Import_Click">
                     <ic:SymbolIcon Symbol="Document"/>
                 </Button>
-                <Button ToolTip="Save As">
+                <Button ToolTip="Save As" Click="Export_Click">
                     <ic:SymbolIcon Symbol="Save"/>
                 </Button>
             </ToolBar>

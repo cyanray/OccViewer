@@ -10,19 +10,10 @@ using System.Diagnostics;
 using System.Runtime.Intrinsics.Arm;
 using OccViewer.Viewer.Shortcut;
 using System.Diagnostics.CodeAnalysis;
+using static System.Windows.Forms.DataFormats;
 
 namespace OccViewer.Viewer
 {
-
-    public enum ModelFormat
-    {
-        BREP,
-        STEP,
-        IGES,
-        VRML,
-        STL,
-        IMAGE
-    }
 
     public enum DisplayMode
     {
@@ -58,8 +49,7 @@ namespace OccViewer.Viewer
             [MemberNotNull(nameof(ShortcutToActionMap))]
             set
             {
-                if (value == null) throw new ArgumentNullException(nameof(value));
-                m_ActionShortcuts = value;
+                m_ActionShortcuts = value ?? throw new ArgumentNullException(nameof(value));
                 ShortcutToActionMap = new Dictionary<CombineShortcut, ActionStatus>
                 {
                     { value.RectangleSelectionShortcut, ActionStatus.RectangleSelection },
@@ -165,174 +155,29 @@ namespace OccViewer.Viewer
             return View.InitViewer();
         }
 
-        public void ImportModel(ModelFormat theFormat)
+        public bool ImportModel(ModelFormat format, string filename)
         {
-            int aFormat = 10;
-            OpenFileDialog anOpenDialog = new();
-            string aDataDir = Environment.GetEnvironmentVariable("CSF_OCCTDataPath");
-            string aFilter = "";
-
-            switch (theFormat)
-            {
-                case ModelFormat.BREP:
-                    anOpenDialog.InitialDirectory = (aDataDir + "\\occ");
-                    aFormat = 0;
-                    aFilter = "BREP Files (*.brep *.rle)|*.brep; *.rle";
-                    break;
-                case ModelFormat.STEP:
-                    anOpenDialog.InitialDirectory = (aDataDir + "\\step");
-                    aFormat = 1;
-                    aFilter = "STEP Files (*.stp *.step)|*.stp; *.step";
-                    break;
-                case ModelFormat.IGES:
-                    anOpenDialog.InitialDirectory = (aDataDir + "\\iges");
-                    aFormat = 2;
-                    aFilter = "IGES Files (*.igs *.iges)|*.igs; *.iges";
-                    break;
-                default:
-                    break;
-            }
-
-            anOpenDialog.Filter = aFilter + "|All files (*.*)|*.*";
-            if (anOpenDialog.ShowDialog() == DialogResult.OK)
-            {
-                string aFileName = anOpenDialog.FileName;
-                if (aFileName == "")
-                {
-                    return;
-                }
-
-                if (!View.TranslateModel(aFileName, aFormat, true))
-                {
-                    MessageBox.Show("Can't read this file", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-            View.ZoomAllView();
+            return View.TranslateModel(filename, (int)format, true);
         }
 
-        public void ExportModel(ModelFormat theFormat)
+        public bool ExportModel(ModelFormat format, string filename)
         {
-            int aFormat = 10;
-            SaveFileDialog saveDialog = new();
-            string aDataDir = Environment.GetEnvironmentVariable("CSF_OCCTDataPath");
-            string aFilter = "";
-
-            switch (theFormat)
-            {
-                case ModelFormat.BREP:
-                    saveDialog.InitialDirectory = (aDataDir + "\\occ");
-                    aFormat = 0;
-                    aFilter = "BREP Files (*.brep *.rle)|*.brep; *.rle";
-                    break;
-                case ModelFormat.STEP:
-                    saveDialog.InitialDirectory = (aDataDir + "\\step");
-                    aFormat = 1;
-                    aFilter = "STEP Files (*.stp *.step)|*.step; *.stp";
-                    break;
-                case ModelFormat.IGES:
-                    saveDialog.InitialDirectory = (aDataDir + "\\iges");
-                    aFormat = 2;
-                    aFilter = "IGES Files (*.igs *.iges)| *.iges; *.igs";
-                    break;
-                case ModelFormat.VRML:
-                    saveDialog.InitialDirectory = (aDataDir + "\\vrml");
-                    aFormat = 3;
-                    aFilter = "VRML Files (*.vrml)|*.vrml";
-                    break;
-                case ModelFormat.STL:
-                    saveDialog.InitialDirectory = (aDataDir + "\\stl");
-                    aFormat = 4;
-                    aFilter = "STL Files (*.stl)|*.stl";
-                    break;
-                case ModelFormat.IMAGE:
-                    saveDialog.InitialDirectory = (aDataDir + "\\images");
-                    aFormat = 5;
-                    aFilter = "Images Files (*.bmp)|*.bmp";
-                    break;
-                default:
-                    break;
-            }
-
-            saveDialog.Filter = aFilter;
-            if (saveDialog.ShowDialog() == DialogResult.OK)
-            {
-                string aFileName = saveDialog.FileName;
-                if (aFileName == "")
-                {
-                    return;
-                }
-
-                if (!View.TranslateModel(aFileName, aFormat, false))
-                {
-                    MessageBox.Show("Can not write this file", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
+            return View.TranslateModel(filename, (int)format, false);
         }
 
-        public void FitAll()
-        {
-            View.ZoomAllView();
-        }
-
-        public void ZoomWindow()
-        {
-            m_CurrentActionOverride = ActionStatus.WindowZooming;
-        }
-
-        public void DynamicZooming()
-        {
-            m_CurrentActionOverride = ActionStatus.DynamicZooming;
-        }
-
-        public void DynamicPanning()
-        {
-            m_CurrentActionOverride = ActionStatus.DynamicPanning;
-        }
-
-        public void DynamicRotation()
-        {
-            m_CurrentActionOverride = ActionStatus.DynamicRotation;
-        }
-
-        public void AxoView()
-        {
-            View.AxoView();
-        }
-
-        public void FrontView()
-        {
-            View.FrontView();
-        }
-
-        public void BackView()
-        {
-            View.BackView();
-        }
-
-        public void TopView()
-        {
-            View.TopView();
-        }
-
-        public void BottomView()
-        {
-            View.BottomView();
-        }
-
-        public void LeftView()
-        {
-            View.LeftView();
-        }
-
-        public void RightView()
-        {
-            View.RightView();
-        }
-
-        public void Reset()
-        {
-            View.Reset();
-        }
+        public void FitAll() => View.ZoomAllView();
+        public void ZoomWindow() => m_CurrentActionOverride = ActionStatus.WindowZooming;
+        public void DynamicZooming() => m_CurrentActionOverride = ActionStatus.DynamicZooming;
+        public void DynamicPanning() => m_CurrentActionOverride = ActionStatus.DynamicPanning;
+        public void DynamicRotation() => m_CurrentActionOverride = ActionStatus.DynamicRotation;
+        public void AxoView() => View.AxoView();
+        public void FrontView() => View.FrontView();
+        public void BackView() => View.BackView();
+        public void TopView() => View.TopView();
+        public void BottomView() => View.BottomView();
+        public void LeftView() => View.LeftView();
+        public void RightView() => View.RightView();
+        public void Reset() => View.Reset();
 
         public void HiddenOff()
         {
@@ -396,37 +241,21 @@ namespace OccViewer.Viewer
             //dlg.ShowDialog ();
         }
 
-        public void Delete()
+        public void ClearObjects()
         {
             View.EraseObjects();
             SelectionChanged();
         }
 
-        public IntPtr GetViewPtr()
-        {
-            return View.GetViewPtr();
-        }
+        public IntPtr GetViewPtr() => View.GetViewPtr();
 
-        public IntPtr GetAISContextPtr()
-        {
-            return View.GetAISContextPtr();
-        }
+        public IntPtr GetAISContextPtr() => View.GetAISContextPtr();
 
-        public void SetRenderRation(float ration)
-        {
-            View.SetRenderRation(ration);
-        }
+        public void SetRenderRation(float ration) => View.SetRenderRation(ration);
 
-        public void SetMsaaSamples(int samples)
-        {
-            View.SetMsaaSamples(samples);
-        }
+        public void SetMsaaSamples(int samples) => View.SetMsaaSamples(samples);
 
-        public void DisplayTriedron(bool show)
-        {
-            IsTriedronEnabled = show;
-            View.DisplayTriedron(show);
-        }
+        public void DisplayTriedron(bool show) => View.DisplayTriedron(IsTriedronEnabled = show);
 
         #endregion
 
@@ -528,6 +357,10 @@ namespace OccViewer.Viewer
             Debug.WriteLine($"m_CurrentPressedKey, m_CurrentPressedMouseButton: {m_CurrentPressedKey}, {m_CurrentMouseTrigger}");
             Debug.WriteLine($"m_CurrentAction: {m_CurrentAction}");
         }
+
+        #endregion
+
+        #region MouseEventHandlers
 
         public void HandleMouseDown(System.Windows.IInputElement sender, MouseButtonEventArgs e)
         {
@@ -649,7 +482,7 @@ namespace OccViewer.Viewer
                     break;
                 case ActionStatus.DynamicRotation:
                     View.Rotation(p.X, p.Y);
-                    View.RedrawView(); 
+                    View.RedrawView();
                     break;
                 default:
                     break;

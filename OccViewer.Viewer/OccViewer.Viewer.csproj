@@ -28,10 +28,6 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Common\" />
-	</ItemGroup>
-
 	<PropertyGroup>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>

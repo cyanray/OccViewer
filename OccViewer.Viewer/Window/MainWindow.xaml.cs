@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using OccViewer.Viewer.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace OccViewer.Viewer
 {
@@ -25,7 +29,7 @@ namespace OccViewer.Viewer
 
         public OCCViewer? ActiveViewer { get; private set; }
 
-        private D3DViewer? D3DViewer { get; set; }
+        private D3DViewer D3DViewer { get; set; }
 
         protected void RaisePropertyChanged(string thePropertyName)
         {
@@ -39,6 +43,7 @@ namespace OccViewer.Viewer
             InitViewer();
         }
 
+        [MemberNotNull(nameof(D3DViewer))]
         private void InitViewer()
         {
             D3DViewer = new D3DViewer();
@@ -56,25 +61,75 @@ namespace OccViewer.Viewer
 
         void ViewerGrid_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            // ActiveViewer?.OnMouseUp(ViewerGrid, e);
             ActiveViewer?.HandleMouseUp(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            //ActiveViewer?.OnMouseDown(ViewerGrid, e);
             ActiveViewer?.HandleMouseDown(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            //ActiveViewer?.OnMouseMove(ViewerGrid, e);
             ActiveViewer?.HandleMouseMove(ViewerGrid, e);
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)
         {
-            ActiveViewer?.ImportModel(ModelFormat.IGES);
+            if (ActiveViewer == null) return;
+            OpenFileDialog dialog = new()
+            {
+                Filter = FileFilterConstants.ImportFilterString
+            };
+            var result = dialog.ShowDialog();
+            if (result != null && (bool)result)
+            {
+                string filename = dialog.FileName;
+                if (filename == "") return;
+                ModelFormat format;
+                if (dialog.FilterIndex != FileFilterConstants.ImportFilterArray.Length)
+                {
+                    format = FileFilterConstants.ImportFormatArray[dialog.FilterIndex - 1];
+                }
+                else
+                {
+                    string ext = System.IO.Path.GetExtension(filename);
+                    format = FileFilterConstants.GetModelFormatByExtension(ext);
+                }
+                if (format == ModelFormat.Unknown)
+                {
+                    MessageBox.Show("Unknown model format", "Error!", MessageBoxButton.OK);
+                    return;
+                }
+                if (!ActiveViewer.ImportModel(format, filename))
+                {
+                    MessageBox.Show("Can't read this file", "Error!", MessageBoxButton.OK);
+                    return;
+                }
+                ActiveViewer.View.ZoomAllView();
+            }
+        }
+
+        private void Export_Click(object sender, RoutedEventArgs e)
+        {
+            if (ActiveViewer == null) return;
+            SaveFileDialog dialog = new()
+            {
+                Filter = FileFilterConstants.ExportFilterString
+            };
+            var result = dialog.ShowDialog();
+            if (result != null && (bool)result)
+            {
+                string filename = dialog.FileName;
+                if (filename == "") return;
+                ModelFormat format = FileFilterConstants.ExportFormatArray[dialog.FilterIndex - 1];
+                if (!ActiveViewer.ExportModel(format, filename))
+                {
+                    MessageBox.Show("Can't read this file", "Error!", MessageBoxButton.OK);
+                    return;
+                }
+                ActiveViewer.View.ZoomAllView();
+            }
         }
 
         private void BtnFitAll_Click(object sender, RoutedEventArgs e)
@@ -196,6 +251,11 @@ namespace OccViewer.Viewer
         private void ToggleTriedron_Click(object sender, RoutedEventArgs e)
         {
             ActiveViewer?.DisplayTriedron(!ActiveViewer!.IsTriedronEnabled);
+        }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }
