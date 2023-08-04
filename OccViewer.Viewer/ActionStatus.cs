@@ -4,8 +4,9 @@
     {
         None,
         PickSelection,
-        XorPickSelection,
+        PickSelectionXor,
         RectangleSelection,
+        RectangleSelectionXor,
         DynamicZooming,
         WindowZooming,
         DynamicPanning,

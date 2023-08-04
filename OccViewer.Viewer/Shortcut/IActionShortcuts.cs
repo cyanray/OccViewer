@@ -3,8 +3,9 @@
     public interface IActionShortcuts
     {
         public CombineShortcut PickSelectionShortcut { get; }
-        public CombineShortcut XorPickSelectionShortcut { get; }
+        public CombineShortcut PickSelectionXorShortcut { get; }
         public CombineShortcut RectangleSelectionShortcut { get; }
+        public CombineShortcut RectangleSelectionXorShortcut { get; }
         public CombineShortcut DynamicZoomingShortcut { get; }
         public CombineShortcut WindowZoomingShortcut { get; }
         public CombineShortcut DynamicPanningShortcut { get; }

@@ -48,31 +48,31 @@ namespace OccViewer.Viewer
             AvaliabiltyOfOperationsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-
-        
-        public IActionShortcuts ActionShortcuts 
-        {   get
+        public IActionShortcuts ActionShortcuts
+        {
+            get
             {
                 return m_ActionShortcuts!;
             }
 
             [MemberNotNull(nameof(ShortcutToActionMap))]
-            set 
+            set
             {
-                if(value == null) throw new ArgumentNullException(nameof(value));
+                if (value == null) throw new ArgumentNullException(nameof(value));
                 m_ActionShortcuts = value;
                 ShortcutToActionMap = new Dictionary<CombineShortcut, ActionStatus>
                 {
                     { value.RectangleSelectionShortcut, ActionStatus.RectangleSelection },
+                    { value.RectangleSelectionXorShortcut, ActionStatus.RectangleSelectionXor },
                     { value.DynamicZoomingShortcut, ActionStatus.DynamicZooming },
                     { value.WindowZoomingShortcut, ActionStatus.WindowZooming },
                     { value.DynamicPanningShortcut, ActionStatus.DynamicPanning },
                     { value.DynamicRotationShortcut, ActionStatus.DynamicRotation },
                     { value.PickSelectionShortcut, ActionStatus.PickSelection },
-                    { value.XorPickSelectionShortcut, ActionStatus.XorPickSelection },
+                    { value.PickSelectionXorShortcut, ActionStatus.PickSelectionXor },
                     { value.PopupMenuShortcut, ActionStatus.PopupMenu }
                 };
-            } 
+            }
         }
 
         public OCCTProxyD3D View { get; private set; }
@@ -156,7 +156,7 @@ namespace OccViewer.Viewer
         {
             View = new OCCTProxyD3D();
             View.InitOCCTProxy();
-            DegenerateMode = true;
+            DegenerateMode = false;
             ActionShortcuts = new DefaultActionShortcuts();
         }
 
@@ -336,14 +336,14 @@ namespace OccViewer.Viewer
 
         public void HiddenOff()
         {
-            View.SetDegenerateModeOff();
             DegenerateMode = false;
+            View.SetDegenerateMode(DegenerateMode);
         }
 
         public void HiddenOn()
         {
-            View.SetDegenerateModeOn();
             DegenerateMode = true;
+            View.SetDegenerateMode(DegenerateMode);
         }
 
         public void Wireframe()
@@ -544,13 +544,10 @@ namespace OccViewer.Viewer
             {
                 case ActionStatus.WindowZooming:
                 case ActionStatus.RectangleSelection:
+                case ActionStatus.RectangleSelectionXor:
                     View.BeginRubberBand();
                     break;
                 case ActionStatus.DynamicRotation:
-                    if (!DegenerateMode)
-                    {
-                        View.SetDegenerateModeOn();
-                    }
                     View.StartRotation(p.X, p.Y);
                     break;
                 default:
@@ -563,34 +560,32 @@ namespace OccViewer.Viewer
         {
             var (DpiScaleX, DpiScaleY) = GetDpiScale(sender);
             Point p = new((int)(e.GetPosition(sender).X * DpiScaleX), (int)(e.GetPosition(sender).Y * DpiScaleY));
+            int Height = (int)(((System.Windows.FrameworkElement)sender).ActualHeight * DpiScaleY);
             UpdateCurrentPressedKey();
             UpdateClickedMouseButton(e.ChangedButton);
             UpdateCurrentAction();
+
+            SelectionScheme scheme = m_CurrentAction switch
+            {
+                ActionStatus.PickSelectionXor => SelectionScheme.Xor,
+                ActionStatus.RectangleSelectionXor => SelectionScheme.Xor,
+                _ => SelectionScheme.Replace,
+            };
+
             switch (m_CurrentAction)
             {
                 case ActionStatus.PickSelection:
-                    m_Xmax = p.X;
-                    m_Ymax = p.Y;
-                    View.Select();
-                    SelectionChanged();
-                    break;
-                case ActionStatus.XorPickSelection:
-                    m_Xmax = p.X;
-                    m_Ymax = p.Y;
-                    View.ShiftSelect();
+                case ActionStatus.PickSelectionXor:
+                    View.PickSelection(scheme);
                     SelectionChanged();
                     break;
                 case ActionStatus.RectangleSelection:
-                    m_Xmax = p.X;
-                    m_Ymax = p.Y;
+                case ActionStatus.RectangleSelectionXor:
                     View.EndRubberBand();
-                    int Height = (int)(((System.Windows.FrameworkElement)sender).ActualHeight * DpiScaleY);
-                    View.Select(m_Xmin, Height - m_Ymin, m_Xmax, Height - m_Ymax);
+                    View.RectangleSelection(m_Xmin, Height - m_Ymin, m_Xmax, Height - m_Ymax, scheme);
                     SelectionChanged();
                     break;
                 case ActionStatus.WindowZooming:
-                    m_Xmax = p.X;
-                    m_Ymax = p.Y;
                     int ValZWMin = 1;
                     View.EndRubberBand();
                     if (Math.Abs(m_Xmax - m_Xmin) > ValZWMin && Math.Abs(m_Xmax - m_Ymax) > ValZWMin)
@@ -604,14 +599,6 @@ namespace OccViewer.Viewer
                 case ActionStatus.DynamicPanning:
                     break;
                 case ActionStatus.DynamicRotation:
-                    if (!DegenerateMode)
-                    {
-                        View.SetDegenerateModeOff();
-                    }
-                    else
-                    {
-                        View.SetDegenerateModeOn();
-                    }
                     break;
                 case ActionStatus.PopupMenu:
                     if (sender is Grid aGrid)
@@ -623,6 +610,8 @@ namespace OccViewer.Viewer
                 default:
                     break;
             }
+            m_Xmax = p.X;
+            m_Ymax = p.Y;
             m_CurrentAction = ActionStatus.None;
             m_CurrentActionOverride = ActionStatus.None;
         }
@@ -640,6 +629,7 @@ namespace OccViewer.Viewer
                     View.MoveTo(p.X, p.Y);
                     break;
                 case ActionStatus.RectangleSelection:
+                case ActionStatus.RectangleSelectionXor:
                 case ActionStatus.WindowZooming:
                     m_Xmax = p.X;
                     m_Ymax = p.Y;

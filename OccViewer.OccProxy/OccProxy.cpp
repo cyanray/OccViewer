@@ -43,6 +43,7 @@
 #include <NCollection_Haft.h>
 
 #include <vcclr.h>
+#include "SelectionScheme.hpp"
 
 // list of required OCCT libraries
 #pragma comment(lib, "TKernel.lib")
@@ -188,25 +189,13 @@ public:
 	}
 
 	/// <summary>
-	///Set computed mode in false
+	///Set computed mode 
 	/// </summary>
-	void SetDegenerateModeOn()
+	void SetDegenerateMode(bool flag)
 	{
 		if (!m_View().IsNull())
 		{
-			m_View()->SetComputedMode(Standard_False);
-			m_View()->Redraw();
-		}
-	}
-
-	/// <summary>
-	///Set computed mode in true
-	/// </summary>
-	void SetDegenerateModeOff()
-	{
-		if (!m_View().IsNull())
-		{
-			m_View()->SetComputedMode(Standard_True);
+			m_View()->SetComputedMode(flag);
 			m_View()->Redraw();
 		}
 	}
@@ -280,30 +269,64 @@ public:
 		}
 	}
 
+
 	/// <summary>
 	///Select by rectangle
 	/// </summary>
-	void Select(int theX1, int theY1, int theX2, int theY2)
+	void RectangleSelection(int theX1, int theY1, int theX2, int theY2, SelectionScheme scheme)
 	{
+		bool partially_overlapped = (theX2 <= theX1 && theY2 >= theY1);
+		m_AISContext()->MainSelector()->AllowOverlapDetection(partially_overlapped);
 		if (!m_AISContext().IsNull())
 		{
 			m_AISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
 				Graphic3d_Vec2i(theX2, theY2),
-				m_View());
+				m_View(),
+				static_cast<AIS_SelectionScheme>(scheme));
 			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
 	/// <summary>
-	///Select by click
+	///Select by rectangle
 	/// </summary>
-	void Select()
+	void RectangleSelection(int theX1, int theY1, int theX2, int theY2)
+	{
+		RectangleSelection(theX1, theY1, theX2, theY2, SelectionScheme::Replace);
+	}
+
+	/// <summary>
+	///Select by rectanglek Xor
+	/// </summary>
+	void RectangleSelectionXor(int theX1, int theY1, int theX2, int theY2)
+	{
+		RectangleSelection(theX1, theY1, theX2, theY2, SelectionScheme::Xor);
+	}
+
+	void PickSelection(SelectionScheme scheme)
 	{
 		if (!m_AISContext().IsNull())
 		{
-			m_AISContext()->SelectDetected();
+			m_AISContext()->SelectDetected(static_cast<AIS_SelectionScheme>(scheme));
 			m_AISContext()->UpdateCurrentViewer();
 		}
+	}
+
+	/// <summary>
+	/// Pick Selection
+	/// </summary>
+	void PickSelection()
+	{
+		PickSelection(SelectionScheme::Replace);
+	}
+
+
+	/// <summary>
+	/// Pick Selection Xor
+	/// </summary>
+	void PickSelectionXor()
+	{
+		PickSelection(SelectionScheme::Xor);
 	}
 
 	/// <summary>
@@ -314,33 +337,6 @@ public:
 		if (!m_AISContext().IsNull() && !m_View().IsNull())
 		{
 			m_AISContext()->MoveTo(theX, theY, m_View(), Standard_True);
-		}
-	}
-
-	/// <summary>
-	///Select by rectangle with pressed "Shift" key
-	/// </summary>
-	void ShiftSelect(int theX1, int theY1, int theX2, int theY2)
-	{
-		if (!m_AISContext().IsNull() && !m_View().IsNull())
-		{
-			m_AISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
-				Graphic3d_Vec2i(theX2, theY2),
-				m_View(),
-				AIS_SelectionScheme_XOR);
-			m_AISContext()->UpdateCurrentViewer();
-		}
-	}
-
-	/// <summary>
-	///Select by "Shift" key
-	/// </summary>
-	void ShiftSelect()
-	{
-		if (!m_AISContext().IsNull())
-		{
-			m_AISContext()->SelectDetected(AIS_SelectionScheme_XOR);
-			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -820,8 +816,8 @@ public:
 
 	void UpdateRubberBand(int x1, int y1, int x2, int y2)
 	{
-		//m_RubberBand()->ClearPoints();
-		//m_RubberBand()->SetToUpdate();
+		auto filling_color = (x2 <= x1 && y2 >= y1) ? Quantity_NOC_GREEN3 : Quantity_NOC_WHITE;
+		m_RubberBand()->SetFilling(filling_color, 0.5);
 		m_RubberBand()->SetRectangle(x1, y1, x2, y2);
 		if (!m_AISContext()->IsDisplayed(m_RubberBand()))
 		{

@@ -8,6 +8,12 @@
             MouseButton = MouseButtonTrigger.LeftPressed
         };
 
+        CombineShortcut IActionShortcuts.RectangleSelectionXorShortcut { get; } = new CombineShortcut
+        {
+            Key = PressedKey.CtrlAlt,
+            MouseButton = MouseButtonTrigger.LeftPressed
+        };
+
         CombineShortcut IActionShortcuts.DynamicZoomingShortcut { get; } = new CombineShortcut
         {
             MouseButton = MouseButtonTrigger.RightPressed
@@ -34,7 +40,7 @@
             MouseButton = MouseButtonTrigger.LeftClicked
         };
 
-        CombineShortcut IActionShortcuts.XorPickSelectionShortcut { get; } = new CombineShortcut
+        CombineShortcut IActionShortcuts.PickSelectionXorShortcut { get; } = new CombineShortcut
         {
             Key = PressedKey.Ctrl,
             MouseButton = MouseButtonTrigger.LeftClicked,
