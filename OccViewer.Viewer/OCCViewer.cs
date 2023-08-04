@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Diagnostics;
 using System.Runtime.Intrinsics.Arm;
 using OccViewer.Viewer.Shortcut;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OccViewer.Viewer
 {
@@ -47,7 +48,32 @@ namespace OccViewer.Viewer
             AvaliabiltyOfOperationsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public IActionShortcuts ActionShortcuts { get; set; } = new DefaultActionShortcuts();
+
+        
+        public IActionShortcuts ActionShortcuts 
+        {   get
+            {
+                return m_ActionShortcuts!;
+            }
+
+            [MemberNotNull(nameof(ShortcutToActionMap))]
+            set 
+            {
+                if(value == null) throw new ArgumentNullException(nameof(value));
+                m_ActionShortcuts = value;
+                ShortcutToActionMap = new Dictionary<CombineShortcut, ActionStatus>
+                {
+                    { value.RectangleSelectionShortcut, ActionStatus.RectangleSelection },
+                    { value.DynamicZoomingShortcut, ActionStatus.DynamicZooming },
+                    { value.WindowZoomingShortcut, ActionStatus.WindowZooming },
+                    { value.DynamicPanningShortcut, ActionStatus.DynamicPanning },
+                    { value.DynamicRotationShortcut, ActionStatus.DynamicRotation },
+                    { value.PickSelectionShortcut, ActionStatus.PickSelection },
+                    { value.XorPickSelectionShortcut, ActionStatus.XorPickSelection },
+                    { value.PopupMenuShortcut, ActionStatus.PopupMenu }
+                };
+            } 
+        }
 
         public OCCTProxyD3D View { get; private set; }
 
@@ -105,6 +131,8 @@ namespace OccViewer.Viewer
             }
         }
 
+        private Dictionary<CombineShortcut, ActionStatus> ShortcutToActionMap { get; set; }
+
         private int m_Xmin;
         private int m_Ymin;
         private int m_Xmax;
@@ -118,7 +146,7 @@ namespace OccViewer.Viewer
 
         private MouseButtonTrigger m_CurrentMouseTrigger = MouseButtonTrigger.None;
 
-        private Dictionary<CombineShortcut, ActionStatus> ShortcutToActionMap;
+        private IActionShortcuts? m_ActionShortcuts;
 
         #endregion
 
@@ -129,17 +157,7 @@ namespace OccViewer.Viewer
             View = new OCCTProxyD3D();
             View.InitOCCTProxy();
             DegenerateMode = true;
-            ShortcutToActionMap = new()
-            {
-                { ActionShortcuts.RectangleSelectionShortcut, ActionStatus.RectangleSelection },
-                { ActionShortcuts.WindowZoomingShortcut, ActionStatus.WindowZooming },
-                { ActionShortcuts.DynamicZoomingShortcut, ActionStatus.DynamicZooming },
-                { ActionShortcuts.DynamicPanningShortcut, ActionStatus.DynamicPanning },
-                { ActionShortcuts.DynamicRotationShortcut, ActionStatus.DynamicRotation },
-                { ActionShortcuts.PickSelectionShortcut, ActionStatus.PickSelection },
-                { ActionShortcuts.XorPickSelectionShortcut, ActionStatus.XorPickSelection },
-                { ActionShortcuts.PopupMenuShortcut, ActionStatus.PopupMenu }
-            };
+            ActionShortcuts = new DefaultActionShortcuts();
         }
 
         public bool InitViewer()
