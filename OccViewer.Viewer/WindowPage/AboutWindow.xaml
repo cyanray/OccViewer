@@ -1,0 +1,30 @@
+﻿<Window x:Class="OccViewer.Viewer.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OccViewer.Viewer"
+        mc:Ignorable="d"
+        Title="About" Height="280" Width="450">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Vertical">
+            <TextBlock HorizontalAlignment="Center" Text="OccViewer" FontSize="25" Margin="0,20" />
+            <TextBlock HorizontalAlignment="Center" Margin="0,0,0,10">
+            <Hyperlink x:Name="GithubLink" NavigateUri="https://github.com/cyanray/OccViewer" Click="GithubLink_Click">https://github.com/cyanray/OccViewer</Hyperlink>
+            </TextBlock>
+        </StackPanel>
+        <TextBox x:Name="TextBoxDescription" 
+                 Grid.Row="1"
+                 Margin="5"
+                 VerticalAlignment="Stretch" 
+                 TextWrapping="Wrap" 
+                 AcceptsReturn="True" 
+                 VerticalScrollBarVisibility="Visible" 
+                 IsReadOnly="True">
+        </TextBox>
+    </Grid>
+</Window>

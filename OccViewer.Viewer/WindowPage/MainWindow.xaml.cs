@@ -269,5 +269,10 @@ namespace OccViewer.Viewer
             UseIntuitiveShortcut.IsChecked = true;
             ActiveViewer.ActionShortcuts = new IntuitiveActionShortcuts();
         }
+
+        private void AboutMenu_Click(object sender, RoutedEventArgs e)
+        {
+            new AboutWindow().ShowDialog();
+        }
     }
 }
