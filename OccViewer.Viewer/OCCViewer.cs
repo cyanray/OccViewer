@@ -649,7 +649,7 @@ namespace OccViewer.Viewer
                     break;
                 case ActionStatus.DynamicRotation:
                     View.Rotation(p.X, p.Y);
-                    View.RedrawView();
+                    View.RedrawView(); 
                     break;
                 default:
                     break;
