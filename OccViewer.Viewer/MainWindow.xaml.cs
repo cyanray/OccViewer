@@ -56,17 +56,20 @@ namespace OccViewer.Viewer
 
         void ViewerGrid_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            ActiveViewer?.OnMouseUp(ViewerGrid, e);
+            // ActiveViewer?.OnMouseUp(ViewerGrid, e);
+            ActiveViewer?.HandleMouseUp(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            ActiveViewer?.OnMouseDown(ViewerGrid, e);
+            //ActiveViewer?.OnMouseDown(ViewerGrid, e);
+            ActiveViewer?.HandleMouseDown(ViewerGrid, e);
         }
 
         void ViewerGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            ActiveViewer?.OnMouseMove(ViewerGrid, e);
+            //ActiveViewer?.OnMouseMove(ViewerGrid, e);
+            ActiveViewer?.HandleMouseMove(ViewerGrid, e);
         }
 
         private void Import_Click(object sender, RoutedEventArgs e)

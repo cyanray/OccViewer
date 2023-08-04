@@ -19,6 +19,7 @@
 #include <V3d_View.hxx>
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
+#include <AIS_RubberBand.hxx>
 //topology
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
@@ -98,22 +99,38 @@ public:
 	/// <param name="theWnd">System.IntPtr that contains the window handle (HWND) of the control</param>
 	bool InitViewer()
 	{
-		myGraphicDriver() = new D3DHost_GraphicDriver();
-		myGraphicDriver()->ChangeOptions().buffersNoSwap = true;
-		//myGraphicDriver()->ChangeOptions().contextDebug = true;
+		m_GraphicDriver() = new D3DHost_GraphicDriver();
+		m_GraphicDriver()->ChangeOptions().buffersNoSwap = true;
+		//m_GraphicDriver()->ChangeOptions().contextDebug = true;
 
-		myViewer() = new V3d_Viewer(myGraphicDriver());
-		myViewer()->SetDefaultLights();
-		myViewer()->SetLightOn();
-		myView() = myViewer()->CreateView();
+		m_Viewer() = new V3d_Viewer(m_GraphicDriver());
+		m_Viewer()->SetDefaultLights();
+		m_Viewer()->SetLightOn();
+		m_View() = m_Viewer()->CreateView();
 
 		static Handle(WNT_WClass) aWClass = new WNT_WClass("OCC_Viewer", NULL, CS_OWNDC);
 		Handle(WNT_Window) aWNTWindow = new WNT_Window("OCC_Viewer", aWClass, WS_POPUP, 64, 64, 64, 64);
 		aWNTWindow->SetVirtual(Standard_True);
-		myView()->SetWindow(aWNTWindow);
-		myAISContext() = new AIS_InteractiveContext(myViewer());
-		myAISContext()->UpdateCurrentViewer();
-		myView()->MustBeResized();
+		m_View()->SetWindow(aWNTWindow);
+		m_AISContext() = new AIS_InteractiveContext(m_Viewer());
+		m_AISContext()->UpdateCurrentViewer();
+		m_View()->MustBeResized();
+
+		m_RubberBand() = new AIS_RubberBand();
+		m_RubberBand()->SetFilling(Quantity_NOC_WHITESMOKE, 0.5);
+
+		Handle(Prs3d_Drawer) selectionStyle = new Prs3d_Drawer();
+		selectionStyle->SetLink(m_AISContext()->DefaultDrawer());
+		selectionStyle->SetFaceBoundaryDraw(true);
+		selectionStyle->SetDisplayMode(1); // Shaded
+		selectionStyle->SetTransparency(0.4f);
+		selectionStyle->SetZLayer(Graphic3d_ZLayerId_Topmost);
+		selectionStyle->UnFreeBoundaryAspect()->SetWidth(1.0);
+		selectionStyle->SetColor(Quantity_NOC_CYAN1);
+		selectionStyle->SetBasicFillAreaAspect(new Graphic3d_AspectFillArea3d());
+		const Handle(Graphic3d_AspectFillArea3d)& fillArea = selectionStyle->BasicFillAreaAspect();
+		fillArea->SetColor(Quantity_NOC_GRAY);
+		m_AISContext()->SetHighlightStyle(Prs3d_TypeOfHighlight_Selected, selectionStyle);
 
 		// Display face boundary edge
 		DisplayFaceBoundaryEdge(true);
@@ -127,11 +144,11 @@ public:
 	/// <summary> Resizes custom FBO for Direct3D output. </summary>
 	System::IntPtr ResizeBridgeFBO(int theWinSizeX, int theWinSizeY)
 	{
-		Handle(WNT_Window) aWNTWindow = Handle(WNT_Window)::DownCast(myView()->Window());
+		Handle(WNT_Window) aWNTWindow = Handle(WNT_Window)::DownCast(m_View()->Window());
 		aWNTWindow->SetPos(0, 0, theWinSizeX, theWinSizeY);
-		myView()->MustBeResized();
-		myView()->Invalidate();
-		return System::IntPtr(Handle(D3DHost_View)::DownCast(myView()->View())->D3dColorSurface());
+		m_View()->MustBeResized();
+		m_View()->Invalidate();
+		return System::IntPtr(Handle(D3DHost_View)::DownCast(m_View()->View())->D3dColorSurface());
 	}
 
 	/// <summary>
@@ -140,12 +157,12 @@ public:
 	/// <param name="theFileName">Name of dump file</param>
 	bool Dump(const TCollection_AsciiString& theFileName)
 	{
-		if (myView().IsNull())
+		if (m_View().IsNull())
 		{
 			return false;
 		}
-		myView()->Redraw();
-		return myView()->Dump(theFileName.ToCString()) != Standard_False;
+		m_View()->Redraw();
+		return m_View()->Dump(theFileName.ToCString()) != Standard_False;
 	}
 
 	/// <summary>
@@ -153,9 +170,9 @@ public:
 	/// </summary>
 	void RedrawView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Redraw();
+			m_View()->Redraw();
 		}
 	}
 
@@ -164,9 +181,9 @@ public:
 	/// </summary>
 	void UpdateView(void)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->MustBeResized();
+			m_View()->MustBeResized();
 		}
 	}
 
@@ -175,10 +192,10 @@ public:
 	/// </summary>
 	void SetDegenerateModeOn()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetComputedMode(Standard_False);
-			myView()->Redraw();
+			m_View()->SetComputedMode(Standard_False);
+			m_View()->Redraw();
 		}
 	}
 
@@ -187,10 +204,10 @@ public:
 	/// </summary>
 	void SetDegenerateModeOff()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetComputedMode(Standard_True);
-			myView()->Redraw();
+			m_View()->SetComputedMode(Standard_True);
+			m_View()->Redraw();
 		}
 	}
 
@@ -200,9 +217,9 @@ public:
 	void WindowFitAll(int theXmin, int theYmin,
 		int theXmax, int theYmax)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->WindowFitAll(theXmin, theYmin, theXmax, theYmax);
+			m_View()->WindowFitAll(theXmin, theYmin, theXmax, theYmax);
 		}
 	}
 
@@ -213,9 +230,9 @@ public:
 	void Place(int theX, int theY, float theZoomFactor)
 	{
 		Standard_Real aZoomFactor = theZoomFactor;
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Place(theX, theY, aZoomFactor);
+			m_View()->Place(theX, theY, aZoomFactor);
 		}
 	}
 
@@ -224,9 +241,9 @@ public:
 	/// </summary>
 	void Zoom(int theX1, int theY1, int theX2, int theY2)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Zoom(theX1, theY1, theX2, theY2);
+			m_View()->Zoom(theX1, theY1, theX2, theY2);
 		}
 	}
 
@@ -235,9 +252,9 @@ public:
 	/// </summary>
 	void Pan(int theX, int theY)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Pan(theX, theY);
+			m_View()->Pan(theX, theY);
 		}
 	}
 
@@ -246,9 +263,9 @@ public:
 	/// </summary>
 	void Rotation(int theX, int theY)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Rotation(theX, theY);
+			m_View()->Rotation(theX, theY);
 		}
 	}
 
@@ -257,9 +274,9 @@ public:
 	/// </summary>
 	void StartRotation(int theX, int theY)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->StartRotation(theX, theY);
+			m_View()->StartRotation(theX, theY);
 		}
 	}
 
@@ -268,12 +285,12 @@ public:
 	/// </summary>
 	void Select(int theX1, int theY1, int theX2, int theY2)
 	{
-		if (!myAISContext().IsNull())
+		if (!m_AISContext().IsNull())
 		{
-			myAISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
+			m_AISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
 				Graphic3d_Vec2i(theX2, theY2),
-				myView());
-			myAISContext()->UpdateCurrentViewer();
+				m_View());
+			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -282,10 +299,10 @@ public:
 	/// </summary>
 	void Select()
 	{
-		if (!myAISContext().IsNull())
+		if (!m_AISContext().IsNull())
 		{
-			myAISContext()->SelectDetected();
-			myAISContext()->UpdateCurrentViewer();
+			m_AISContext()->SelectDetected();
+			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -294,9 +311,9 @@ public:
 	/// </summary>
 	void MoveTo(int theX, int theY)
 	{
-		if (!myAISContext().IsNull() && !myView().IsNull())
+		if (!m_AISContext().IsNull() && !m_View().IsNull())
 		{
-			myAISContext()->MoveTo(theX, theY, myView(), Standard_True);
+			m_AISContext()->MoveTo(theX, theY, m_View(), Standard_True);
 		}
 	}
 
@@ -305,13 +322,13 @@ public:
 	/// </summary>
 	void ShiftSelect(int theX1, int theY1, int theX2, int theY2)
 	{
-		if (!myAISContext().IsNull() && !myView().IsNull())
+		if (!m_AISContext().IsNull() && !m_View().IsNull())
 		{
-			myAISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
+			m_AISContext()->SelectRectangle(Graphic3d_Vec2i(theX1, theY1),
 				Graphic3d_Vec2i(theX2, theY2),
-				myView(),
+				m_View(),
 				AIS_SelectionScheme_XOR);
-			myAISContext()->UpdateCurrentViewer();
+			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -320,10 +337,10 @@ public:
 	/// </summary>
 	void ShiftSelect()
 	{
-		if (!myAISContext().IsNull())
+		if (!m_AISContext().IsNull())
 		{
-			myAISContext()->SelectDetected(AIS_SelectionScheme_XOR);
-			myAISContext()->UpdateCurrentViewer();
+			m_AISContext()->SelectDetected(AIS_SelectionScheme_XOR);
+			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -332,9 +349,9 @@ public:
 	/// </summary>
 	void BackgroundColor(int& theRed, int& theGreen, int& theBlue)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			Quantity_Color aColor = myView()->BackgroundColor();
+			Quantity_Color aColor = m_View()->BackgroundColor();
 			theRed = (int)aColor.Red() * 255;
 			theGreen = (int)aColor.Green() * 255;
 			theBlue = (int)aColor.Blue() * 255;
@@ -376,9 +393,9 @@ public:
 	/// </summary>
 	void UpdateCurrentViewer()
 	{
-		if (!myAISContext().IsNull())
+		if (!m_AISContext().IsNull())
 		{
-			myAISContext()->UpdateCurrentViewer();
+			m_AISContext()->UpdateCurrentViewer();
 		}
 	}
 
@@ -387,9 +404,9 @@ public:
 	/// </summary>
 	void FrontView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Yneg);
+			m_View()->SetProj(V3d_Yneg);
 		}
 	}
 
@@ -398,9 +415,9 @@ public:
 	/// </summary>
 	void TopView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Zpos);
+			m_View()->SetProj(V3d_Zpos);
 		}
 	}
 
@@ -409,9 +426,9 @@ public:
 	/// </summary>
 	void LeftView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Xneg);
+			m_View()->SetProj(V3d_Xneg);
 		}
 	}
 
@@ -420,9 +437,9 @@ public:
 	/// </summary>
 	void BackView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Ypos);
+			m_View()->SetProj(V3d_Ypos);
 		}
 	}
 
@@ -431,9 +448,9 @@ public:
 	/// </summary>
 	void RightView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Xpos);
+			m_View()->SetProj(V3d_Xpos);
 		}
 	}
 
@@ -442,9 +459,9 @@ public:
 	/// </summary>
 	void BottomView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_Zneg);
+			m_View()->SetProj(V3d_Zneg);
 		}
 	}
 
@@ -453,9 +470,9 @@ public:
 	/// </summary>
 	void AxoView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetProj(V3d_XposYnegZpos);
+			m_View()->SetProj(V3d_XposYnegZpos);
 		}
 	}
 
@@ -464,9 +481,9 @@ public:
 	/// </summary>
 	float Scale()
 	{
-		return myView().IsNull()
+		return m_View().IsNull()
 			? -1.0f
-			: float(myView()->Scale());
+			: float(m_View()->Scale());
 	}
 
 	/// <summary>
@@ -474,10 +491,10 @@ public:
 	/// </summary>
 	void ZoomAllView()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->FitAll();
-			myView()->ZFitAll();
+			m_View()->FitAll();
+			m_View()->ZFitAll();
 		}
 	}
 
@@ -486,9 +503,9 @@ public:
 	/// </summary>
 	void Reset()
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->Reset();
+			m_View()->Reset();
 		}
 	}
 
@@ -498,7 +515,7 @@ public:
 	/// <param name="theMode">Set current mode</param>
 	void SetDisplayMode(int theMode)
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
@@ -506,18 +523,18 @@ public:
 		AIS_DisplayMode aCurrentMode = theMode == 0
 			? AIS_WireFrame
 			: AIS_Shaded;
-		if (myAISContext()->NbSelected() == 0)
+		if (m_AISContext()->NbSelected() == 0)
 		{
-			myAISContext()->SetDisplayMode(aCurrentMode, Standard_False);
+			m_AISContext()->SetDisplayMode(aCurrentMode, Standard_False);
 		}
 		else
 		{
-			for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+			for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 			{
-				myAISContext()->SetDisplayMode(myAISContext()->SelectedInteractive(), theMode, Standard_False);
+				m_AISContext()->SetDisplayMode(m_AISContext()->SelectedInteractive(), theMode, Standard_False);
 			}
 		}
-		myAISContext()->UpdateCurrentViewer();
+		m_AISContext()->UpdateCurrentViewer();
 	}
 
 	/// <summary>
@@ -525,17 +542,17 @@ public:
 	/// </summary>
 	void SetColor(int theR, int theG, int theB)
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
 
 		Quantity_Color aCol(theR / 255.0, theG / 255.0, theB / 255.0, Quantity_TOC_RGB);
-		for (; myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (; m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			myAISContext()->SetColor(myAISContext()->SelectedInteractive(), aCol, false);
+			m_AISContext()->SetColor(m_AISContext()->SelectedInteractive(), aCol, false);
 		}
-		myAISContext()->UpdateCurrentViewer();
+		m_AISContext()->UpdateCurrentViewer();
 	}
 
 	/// <summary>
@@ -573,7 +590,7 @@ public:
 	/// </summary>
 	void ObjectColor(int& theRed, int& theGreen, int& theBlue)
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
@@ -581,17 +598,17 @@ public:
 		theRed = 255;
 		theGreen = 255;
 		theBlue = 255;
-		myAISContext()->InitSelected();
-		if (!myAISContext()->MoreSelected())
+		m_AISContext()->InitSelected();
+		if (!m_AISContext()->MoreSelected())
 		{
 			return;
 		}
 
-		Handle(AIS_InteractiveObject) aCurrent = myAISContext()->SelectedInteractive();
+		Handle(AIS_InteractiveObject) aCurrent = m_AISContext()->SelectedInteractive();
 		if (aCurrent->HasColor())
 		{
 			Quantity_Color anObjCol;
-			myAISContext()->Color(aCurrent, anObjCol);
+			m_AISContext()->Color(aCurrent, anObjCol);
 			theRed = int(anObjCol.Red() * 255.0);
 			theGreen = int(anObjCol.Green() * 255.0);
 			theBlue = int(anObjCol.Blue() * 255.0);
@@ -603,9 +620,9 @@ public:
 	/// </summary>
 	void SetBackgroundColor(int theRed, int theGreen, int theBlue)
 	{
-		if (!myView().IsNull())
+		if (!m_View().IsNull())
 		{
-			myView()->SetBackgroundColor(Quantity_TOC_RGB, theRed / 255.0, theGreen / 255.0, theBlue / 255.0);
+			m_View()->SetBackgroundColor(Quantity_TOC_RGB, theRed / 255.0, theGreen / 255.0, theBlue / 255.0);
 		}
 	}
 
@@ -614,13 +631,13 @@ public:
 	/// </summary>
 	void EraseObjects()
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
 
-		myAISContext()->EraseSelected(Standard_False);
-		myAISContext()->ClearSelected(Standard_True);
+		m_AISContext()->EraseSelected(Standard_False);
+		m_AISContext()->ClearSelected(Standard_True);
 	}
 
 	/// <summary>
@@ -636,15 +653,15 @@ public:
 	/// </summary>
 	void SetMaterial(int theMaterial)
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			myAISContext()->SetMaterial(myAISContext()->SelectedInteractive(), (Graphic3d_NameOfMaterial)theMaterial, Standard_False);
+			m_AISContext()->SetMaterial(m_AISContext()->SelectedInteractive(), (Graphic3d_NameOfMaterial)theMaterial, Standard_False);
 		}
-		myAISContext()->UpdateCurrentViewer();
+		m_AISContext()->UpdateCurrentViewer();
 	}
 
 	/// <summary>
@@ -652,15 +669,15 @@ public:
 	/// </summary>
 	void SetTransparency(int theTrans)
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return;
 		}
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			myAISContext()->SetTransparency(myAISContext()->SelectedInteractive(), ((Standard_Real)theTrans) / 10.0, Standard_False);
+			m_AISContext()->SetTransparency(m_AISContext()->SelectedInteractive(), ((Standard_Real)theTrans) / 10.0, Standard_False);
 		}
-		myAISContext()->UpdateCurrentViewer();
+		m_AISContext()->UpdateCurrentViewer();
 	}
 
 	/// <summary>
@@ -668,12 +685,12 @@ public:
 	/// </summary>
 	bool IsObjectSelected()
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return false;
 		}
-		myAISContext()->InitSelected();
-		return myAISContext()->MoreSelected() != Standard_False;
+		m_AISContext()->InitSelected();
+		return m_AISContext()->MoreSelected() != Standard_False;
 	}
 
 	/// <summary>
@@ -681,20 +698,20 @@ public:
 	/// </summary>
 	int DisplayMode()
 	{
-		if (myAISContext().IsNull())
+		if (m_AISContext().IsNull())
 		{
 			return -1;
 		}
 
 		bool isOneOrMoreInShading = false;
 		bool isOneOrMoreInWireframe = false;
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			if (myAISContext()->IsDisplayed(myAISContext()->SelectedInteractive(), AIS_Shaded))
+			if (m_AISContext()->IsDisplayed(m_AISContext()->SelectedInteractive(), AIS_Shaded))
 			{
 				isOneOrMoreInShading = true;
 			}
-			if (myAISContext()->IsDisplayed(myAISContext()->SelectedInteractive(), AIS_WireFrame))
+			if (m_AISContext()->IsDisplayed(m_AISContext()->SelectedInteractive(), AIS_WireFrame))
 			{
 				isOneOrMoreInWireframe = true;
 			}
@@ -720,8 +737,8 @@ public:
 	/// </summary>
 	bool SetAISContext(OCCTProxyD3D^ theViewer)
 	{
-		this->myAISContext() = theViewer->GetContext();
-		if (myAISContext().IsNull())
+		this->m_AISContext() = theViewer->GetContext();
+		if (m_AISContext().IsNull())
 		{
 			return false;
 		}
@@ -733,38 +750,38 @@ public:
 	/// </summary>
 	Handle(AIS_InteractiveContext) GetContext()
 	{
-		return myAISContext();
+		return m_AISContext();
 	}
 
 	void EnableRayTracing()
 	{
-		myView()->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
+		m_View()->ChangeRenderingParams().Method = Graphic3d_RM_RAYTRACING;
 		UpdateCurrentViewer();
 	}
 
 	void DisableRayTracing()
 	{
-		myView()->ChangeRenderingParams().Method = Graphic3d_RM_RASTERIZATION;
+		m_View()->ChangeRenderingParams().Method = Graphic3d_RM_RASTERIZATION;
 		UpdateCurrentViewer();
 	}
 
 	void SetAntialiasing(bool theIsEnabled)
 	{
-		myView()->ChangeRenderingParams().IsAntialiasingEnabled = theIsEnabled;
+		m_View()->ChangeRenderingParams().IsAntialiasingEnabled = theIsEnabled;
 		UpdateCurrentViewer();
 	}
 
 	void SetRenderRation(Standard_ShortReal ration)
 	{
-		myView()->ChangeRenderingParams().RenderResolutionScale = ration;
+		m_View()->ChangeRenderingParams().RenderResolutionScale = ration;
 		UpdateCurrentViewer();
 	}
 
 	void DisplayFaceBoundaryEdge(bool show)
 	{
-		myAISContext()->DefaultDrawer()->SetFaceBoundaryDraw(show);
-		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NameOfColor::Quantity_NOC_BLACK);
-		myAISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
+		m_AISContext()->DefaultDrawer()->SetFaceBoundaryDraw(show);
+		m_AISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetColor(Quantity_NameOfColor::Quantity_NOC_BLACK);
+		m_AISContext()->DefaultDrawer()->FaceBoundaryAspect()->SetWidth(1.0);
 		UpdateCurrentViewer();
 	}
 
@@ -772,28 +789,57 @@ public:
 	{
 		if (show)
 		{
-			myView()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
+			m_View()->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_SNOW, 0.1);
 		}
 		else
 		{
-			myView()->TriedronErase();
+			m_View()->TriedronErase();
 		}
 		UpdateCurrentViewer();
 	}
 
 	void SetMsaaSamples(int samples)
 	{
-		myView()->ChangeRenderingParams().NbMsaaSamples = samples;
+		m_View()->ChangeRenderingParams().NbMsaaSamples = samples;
 	}
 
 	System::IntPtr GetViewPtr()
 	{
-		return System::IntPtr(myView().get());
+		return System::IntPtr(m_View().get());
 	}
 
 	System::IntPtr GetAISContextPtr()
 	{
-		return System::IntPtr(myAISContext().get());
+		return System::IntPtr(m_AISContext().get());
+	}
+
+	void BeginRubberBand()
+	{
+		m_RubberBand()->ClearPoints();
+	}
+
+	void UpdateRubberBand(int x1, int y1, int x2, int y2)
+	{
+		//m_RubberBand()->ClearPoints();
+		//m_RubberBand()->SetToUpdate();
+		m_RubberBand()->SetRectangle(x1, y1, x2, y2);
+		if (!m_AISContext()->IsDisplayed(m_RubberBand()))
+		{
+			m_AISContext()->Display(m_RubberBand(), 0, -1, false, AIS_DS_Displayed);
+		}
+		else
+		{
+			m_AISContext()->Redisplay(m_RubberBand(), false);
+		}
+	}
+
+	void EndRubberBand()
+	{
+		if (m_AISContext()->IsDisplayed(m_RubberBand()))
+		{
+			m_AISContext()->Remove(m_RubberBand(), false);
+			m_RubberBand()->ClearPoints();
+		}
 	}
 
 public:
@@ -824,9 +870,9 @@ public:
 		}
 
 		Handle(AIS_Shape) aPrs = new AIS_Shape(aShape);
-		myAISContext()->SetMaterial(aPrs, Graphic3d_NameOfMaterial_Gold, Standard_False);
-		myAISContext()->SetDisplayMode(aPrs, AIS_Shaded, Standard_False);
-		myAISContext()->Display(aPrs, Standard_True);
+		m_AISContext()->SetMaterial(aPrs, Graphic3d_NameOfMaterial_Gold, Standard_False);
+		m_AISContext()->SetDisplayMode(aPrs, AIS_Shaded, Standard_False);
+		m_AISContext()->Display(aPrs, Standard_True);
 		return true;
 	}
 
@@ -855,9 +901,9 @@ public:
 			{
 				for (int aShapeIter = 1; aShapeIter <= aNbShap; ++aShapeIter)
 				{
-					myAISContext()->Display(new AIS_Shape(aReader.Shape(aShapeIter)), Standard_False);
+					m_AISContext()->Display(new AIS_Shape(aReader.Shape(aShapeIter)), Standard_False);
 				}
-				myAISContext()->UpdateCurrentViewer();
+				m_AISContext()->UpdateCurrentViewer();
 			}
 		}
 		return true;
@@ -877,8 +923,8 @@ public:
 
 		aReader.TransferRoots();
 		TopoDS_Shape aShape = aReader.OneShape();
-		myAISContext()->Display(new AIS_Shape(aShape), Standard_False);
-		myAISContext()->UpdateCurrentViewer();
+		m_AISContext()->Display(new AIS_Shape(aShape), Standard_False);
+		m_AISContext()->UpdateCurrentViewer();
 		return true;
 	}
 
@@ -888,13 +934,13 @@ public:
 	/// <param name="theFileName">Name of export file</param>
 	bool ExportBRep(const TCollection_AsciiString& theFileName)
 	{
-		myAISContext()->InitSelected();
-		if (!myAISContext()->MoreSelected())
+		m_AISContext()->InitSelected();
+		if (!m_AISContext()->MoreSelected())
 		{
 			return false;
 		}
 
-		Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(myAISContext()->SelectedInteractive());
+		Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(m_AISContext()->SelectedInteractive());
 		return !anIS.IsNull()
 			&& BRepTools::Write(anIS->Shape(), theFileName.ToCString());
 	}
@@ -907,9 +953,9 @@ public:
 	{
 		STEPControl_StepModelType aType = STEPControl_AsIs;
 		STEPControl_Writer        aWriter;
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(myAISContext()->SelectedInteractive());
+			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(m_AISContext()->SelectedInteractive());
 			if (anIS.IsNull())
 			{
 				return false;
@@ -933,9 +979,9 @@ public:
 		IGESControl_Controller::Init();
 		IGESControl_Writer aWriter(Interface_Static::CVal("XSTEP.iges.unit"),
 			Interface_Static::IVal("XSTEP.iges.writebrep.mode"));
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(myAISContext()->SelectedInteractive());
+			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(m_AISContext()->SelectedInteractive());
 			if (anIS.IsNull())
 			{
 				return false;
@@ -957,9 +1003,9 @@ public:
 		TopoDS_Compound aRes;
 		BRep_Builder    aBuilder;
 		aBuilder.MakeCompound(aRes);
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(myAISContext()->SelectedInteractive());
+			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(m_AISContext()->SelectedInteractive());
 			if (anIS.IsNull())
 			{
 				return false;
@@ -981,9 +1027,9 @@ public:
 		TopoDS_Compound aComp;
 		BRep_Builder    aBuilder;
 		aBuilder.MakeCompound(aComp);
-		for (myAISContext()->InitSelected(); myAISContext()->MoreSelected(); myAISContext()->NextSelected())
+		for (m_AISContext()->InitSelected(); m_AISContext()->MoreSelected(); m_AISContext()->NextSelected())
 		{
-			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(myAISContext()->SelectedInteractive());
+			Handle(AIS_Shape) anIS = Handle(AIS_Shape)::DownCast(m_AISContext()->SelectedInteractive());
 			if (anIS.IsNull())
 			{
 				return false;
@@ -1035,17 +1081,18 @@ public:
 	/// </summary>
 	void InitOCCTProxy()
 	{
-		myGraphicDriver().Nullify();
-		myViewer().Nullify();
-		myView().Nullify();
-		myAISContext().Nullify();
+		m_GraphicDriver().Nullify();
+		m_Viewer().Nullify();
+		m_View().Nullify();
+		m_AISContext().Nullify();
 	}
 
 private:
 
-	NCollection_Haft<Handle(V3d_Viewer)>             myViewer;
-	NCollection_Haft<Handle(V3d_View)>               myView;
-	NCollection_Haft<Handle(AIS_InteractiveContext)> myAISContext;
-	NCollection_Haft<Handle(D3DHost_GraphicDriver)>  myGraphicDriver;
+	NCollection_Haft<Handle(V3d_Viewer)>             m_Viewer;
+	NCollection_Haft<Handle(V3d_View)>               m_View;
+	NCollection_Haft<Handle(AIS_InteractiveContext)> m_AISContext;
+	NCollection_Haft<Handle(D3DHost_GraphicDriver)>  m_GraphicDriver;
+	NCollection_Haft<Handle(AIS_RubberBand)>		 m_RubberBand;
 
 };

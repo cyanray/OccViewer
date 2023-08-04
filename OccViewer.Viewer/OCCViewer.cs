@@ -6,24 +6,13 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Drawing;
 using System.Windows.Controls;
+using System.Diagnostics;
+using System.Runtime.Intrinsics.Arm;
+using OccViewer.Viewer.Shortcut;
 
 namespace OccViewer.Viewer
 {
-    public enum CurrentAction3d
-    {
-        Nothing,
-        DynamicZooming,
-        WindowZooming,
-        DynamicPanning,
-        GlobalPanning,
-        DynamicRotation
-    }
-    public enum CurrentPressedKey
-    {
-        Nothing,
-        Ctrl,
-        Shift
-    }
+
     public enum ModelFormat
     {
         BREP,
@@ -42,6 +31,8 @@ namespace OccViewer.Viewer
 
     public class OCCViewer
     {
+        #region PropertiesAndMembers
+
         public event EventHandler? ZoomingFinished;
 
         protected void RaiseZoomingFinished()
@@ -56,14 +47,11 @@ namespace OccViewer.Viewer
             AvaliabiltyOfOperationsChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        public IActionShortcuts ActionShortcuts { get; set; } = new DefaultActionShortcuts();
+
         public OCCTProxyD3D View { get; private set; }
 
-        public CurrentAction3d CurrentMode { get; private set; }
-
-        private bool IsRectVisible { get; set; }
-
         public bool DegenerateMode { get; private set; }
-
 
         public bool IsWireframeEnabled { get; private set; }
 
@@ -117,21 +105,41 @@ namespace OccViewer.Viewer
             }
         }
 
-        private float m_CurZoom;
         private int m_Xmin;
         private int m_Ymin;
         private int m_Xmax;
         private int m_Ymax;
-        private int m_ButtonDownX;
-        private int m_ButtonDownY;
+
+        private ActionStatus m_CurrentAction = ActionStatus.None;
+
+        private ActionStatus m_CurrentActionOverride = ActionStatus.None;
+
+        private PressedKey m_CurrentPressedKey = PressedKey.None;
+
+        private MouseButtonTrigger m_CurrentMouseTrigger = MouseButtonTrigger.None;
+
+        private Dictionary<CombineShortcut, ActionStatus> ShortcutToActionMap;
+
+        #endregion
+
+        #region PublicMethods
 
         public OCCViewer()
         {
             View = new OCCTProxyD3D();
             View.InitOCCTProxy();
-            CurrentMode = CurrentAction3d.Nothing;
-            IsRectVisible = true;
             DegenerateMode = true;
+            ShortcutToActionMap = new()
+            {
+                { ActionShortcuts.RectangleSelectionShortcut, ActionStatus.RectangleSelection },
+                { ActionShortcuts.WindowZoomingShortcut, ActionStatus.WindowZooming },
+                { ActionShortcuts.DynamicZoomingShortcut, ActionStatus.DynamicZooming },
+                { ActionShortcuts.DynamicPanningShortcut, ActionStatus.DynamicPanning },
+                { ActionShortcuts.DynamicRotationShortcut, ActionStatus.DynamicRotation },
+                { ActionShortcuts.PickSelectionShortcut, ActionStatus.PickSelection },
+                { ActionShortcuts.XorPickSelectionShortcut, ActionStatus.XorPickSelection },
+                { ActionShortcuts.PopupMenuShortcut, ActionStatus.PopupMenu }
+            };
         }
 
         public bool InitViewer()
@@ -250,28 +258,22 @@ namespace OccViewer.Viewer
 
         public void ZoomWindow()
         {
-            CurrentMode = CurrentAction3d.WindowZooming;
+            m_CurrentActionOverride = ActionStatus.WindowZooming;
         }
 
         public void DynamicZooming()
         {
-            CurrentMode = CurrentAction3d.DynamicZooming;
+            m_CurrentActionOverride = ActionStatus.DynamicZooming;
         }
 
         public void DynamicPanning()
         {
-            CurrentMode = CurrentAction3d.DynamicPanning;
+            m_CurrentActionOverride = ActionStatus.DynamicPanning;
         }
 
         public void DynamicRotation()
         {
-            CurrentMode = CurrentAction3d.DynamicRotation;
-        }
-
-        public void GlobalPanning()
-        {
-            m_CurZoom = View.Scale();
-            CurrentMode = CurrentAction3d.GlobalPanning;
+            m_CurrentActionOverride = ActionStatus.DynamicRotation;
         }
 
         public void AxoView()
@@ -324,50 +326,6 @@ namespace OccViewer.Viewer
         {
             View.SetDegenerateModeOn();
             DegenerateMode = true;
-        }
-
-        public void SelectionChanged()
-        {
-            switch (View.DisplayMode())
-            {
-                case -1:
-                    IsShadingEnabled = false;
-                    IsWireframeEnabled = false;
-                    break;
-                case 0:
-                    IsWireframeEnabled = false;
-                    IsShadingEnabled = true;
-                    IsTransparencyEnabled = false;
-                    break;
-                case 1:
-                    IsWireframeEnabled = true;
-                    IsShadingEnabled = false;
-                    IsTransparencyEnabled = true;
-                    break;
-                case 10:
-                    IsWireframeEnabled = true;
-                    IsShadingEnabled = true;
-                    IsTransparencyEnabled = true;
-                    break;
-                default:
-                    break;
-            }
-
-            if (View.IsObjectSelected())
-            {
-                IsColorEnabled = true;
-                IsMaterialEnabled = true;
-                IsDeleteEnabled = true;
-            }
-            else
-            {
-                IsColorEnabled = false;
-                IsMaterialEnabled = false;
-                IsTransparencyEnabled = false;
-                IsDeleteEnabled = false;
-            }
-
-            RaiseAvaliabiltyOfOperationsChanged();
         }
 
         public void Wireframe()
@@ -452,263 +410,243 @@ namespace OccViewer.Viewer
             View.DisplayTriedron(show);
         }
 
-        protected void MultiDragEvent(int x, int y, int theState)
+        #endregion
+
+        #region PrivateMembers
+
+        private void SelectionChanged()
         {
-            if (theState == -1) //mouse is down
+            switch (View.DisplayMode())
             {
-                m_ButtonDownX = x;
-                m_ButtonDownY = y;
+                case -1:
+                    IsShadingEnabled = false;
+                    IsWireframeEnabled = false;
+                    break;
+                case 0:
+                    IsWireframeEnabled = false;
+                    IsShadingEnabled = true;
+                    IsTransparencyEnabled = false;
+                    break;
+                case 1:
+                    IsWireframeEnabled = true;
+                    IsShadingEnabled = false;
+                    IsTransparencyEnabled = true;
+                    break;
+                case 10:
+                    IsWireframeEnabled = true;
+                    IsShadingEnabled = true;
+                    IsTransparencyEnabled = true;
+                    break;
+                default:
+                    break;
             }
-            else if (theState == 1) //mouse is up
+
+            if (View.IsObjectSelected())
             {
-                View.ShiftSelect(Math.Min(m_ButtonDownX, x), Math.Min(m_ButtonDownY, y),
-                                 Math.Max(m_ButtonDownX, x), Math.Max(m_ButtonDownY, y));
+                IsColorEnabled = true;
+                IsMaterialEnabled = true;
+                IsDeleteEnabled = true;
             }
+            else
+            {
+                IsColorEnabled = false;
+                IsMaterialEnabled = false;
+                IsTransparencyEnabled = false;
+                IsDeleteEnabled = false;
+            }
+
+            RaiseAvaliabiltyOfOperationsChanged();
         }
 
-        protected void DragEvent(int x, int y, int theState)
+        private static (double DpiScaleX, double DpiScaleY) GetDpiScale(object element)
         {
-            if (theState == -1) //mouse is down
-            {
-                m_ButtonDownX = x;
-                m_ButtonDownY = y;
-            }
-            else if (theState == 1) //mouse is up
-            {
-                View.Select(Math.Min(m_ButtonDownX, x), Math.Min(m_ButtonDownY, y),
-                            Math.Max(m_ButtonDownX, x), Math.Max(m_ButtonDownY, y));
-            }
+            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)element);
+            return (dpi.DpiScaleX, dpi.DpiScaleY);
         }
 
-        public void OnMouseDown(System.Windows.IInputElement sender, MouseButtonEventArgs e)
+        private void UpdateCurrentPressedKey()
+        {
+            bool ctrl = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+            bool shift = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+            bool alt = Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt);
+            m_CurrentPressedKey = ctrl ? PressedKey.Ctrl : PressedKey.None;
+            m_CurrentPressedKey |= shift ? PressedKey.Shift : PressedKey.None;
+            m_CurrentPressedKey |= alt ? PressedKey.Alt : PressedKey.None;
+        }
+
+        private void UpdatePressedMouseButton(MouseButton button)
+        {
+            m_CurrentMouseTrigger = button switch
+            {
+                MouseButton.Left => MouseButtonTrigger.LeftPressed,
+                MouseButton.Middle => MouseButtonTrigger.MiddlePressed,
+                MouseButton.Right => MouseButtonTrigger.RightPressed,
+                _ => MouseButtonTrigger.None,
+            };
+        }
+
+        private void UpdateClickedMouseButton(MouseButton button)
+        {
+            if (m_Xmin != m_Xmax || m_Ymin != m_Ymax) return;
+            m_CurrentMouseTrigger = button switch
+            {
+                MouseButton.Left => MouseButtonTrigger.LeftClicked,
+                MouseButton.Middle => MouseButtonTrigger.MiddleClicked,
+                MouseButton.Right => MouseButtonTrigger.RightClicked,
+                _ => MouseButtonTrigger.None,
+            };
+        }
+
+
+        private void UpdateCurrentAction()
+        {
+            m_CurrentAction = m_CurrentActionOverride;
+            if (m_CurrentAction != ActionStatus.None) return;
+            CombineShortcut shortcut = new(m_CurrentPressedKey, m_CurrentMouseTrigger);
+            if (ShortcutToActionMap.TryGetValue(shortcut, out ActionStatus action))
+            {
+                m_CurrentAction = action;
+            }
+            Debug.WriteLine($"m_CurrentPressedKey, m_CurrentPressedMouseButton: {m_CurrentPressedKey}, {m_CurrentMouseTrigger}");
+            Debug.WriteLine($"m_CurrentAction: {m_CurrentAction}");
+        }
+
+        public void HandleMouseDown(System.Windows.IInputElement sender, MouseButtonEventArgs e)
         {
             if (sender is not Grid aGrid) return;
-
-            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
-            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
-
-            // to avoid the context menu opening
             aGrid.ContextMenu.Visibility = System.Windows.Visibility.Collapsed;
             aGrid.ContextMenu.IsOpen = false;
-
-            if (e.LeftButton == MouseButtonState.Pressed)
+            var (DpiScaleX, DpiScaleY) = GetDpiScale(sender);
+            Point p = new((int)(e.GetPosition(sender).X * DpiScaleX), (int)(e.GetPosition(sender).Y * DpiScaleY));
+            UpdateCurrentPressedKey();
+            UpdatePressedMouseButton(e.ChangedButton);
+            UpdateCurrentAction();
+            m_Xmin = m_Xmax = p.X; m_Ymin = m_Ymax = p.Y;
+            switch (m_CurrentAction)
             {
-                m_Xmin = p.X;
-                m_Xmax = p.X;
-                m_Ymin = p.Y;
-                m_Ymax = p.Y;
-
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
-                    // start the dynamic zooming....
-                    CurrentMode = CurrentAction3d.DynamicZooming;
-                }
-                else
-                {
-                    switch (CurrentMode)
-                    {
-                        case CurrentAction3d.Nothing:
-                            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
-                            {
-                                MultiDragEvent(m_Xmax, m_Ymax, -1);
-                            }
-                            else
-                            {
-                                DragEvent(m_Xmax, m_Ymax, -1);
-                            }
-                            break;
-                        case CurrentAction3d.DynamicRotation:
-                            if (!DegenerateMode)
-                            {
-                                View.SetDegenerateModeOn();
-                            }
-                            View.StartRotation(p.X, p.Y);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            else if (e.RightButton == MouseButtonState.Pressed)
-            {
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
+                case ActionStatus.WindowZooming:
+                case ActionStatus.RectangleSelection:
+                    View.BeginRubberBand();
+                    break;
+                case ActionStatus.DynamicRotation:
                     if (!DegenerateMode)
                     {
                         View.SetDegenerateModeOn();
                     }
                     View.StartRotation(p.X, p.Y);
-                }
-                else
-                {
-                    // show context menu only in this case
-                    aGrid.ContextMenu.Visibility = System.Windows.Visibility.Visible;
-                }
+                    break;
+                default:
+                    break;
             }
+
         }
 
-        public void OnMouseUp(System.Windows.IInputElement sender, MouseButtonEventArgs e)
+        public void HandleMouseUp(System.Windows.IInputElement sender, MouseButtonEventArgs e)
         {
-            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
-            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
-
-            if (e.ChangedButton == MouseButton.Left)
+            var (DpiScaleX, DpiScaleY) = GetDpiScale(sender);
+            Point p = new((int)(e.GetPosition(sender).X * DpiScaleX), (int)(e.GetPosition(sender).Y * DpiScaleY));
+            UpdateCurrentPressedKey();
+            UpdateClickedMouseButton(e.ChangedButton);
+            UpdateCurrentAction();
+            switch (m_CurrentAction)
             {
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
-                    CurrentMode = CurrentAction3d.Nothing;
-                    return;
-                }
-                switch (CurrentMode)
-                {
-                    case CurrentAction3d.Nothing:
-                        if (p.X == m_Xmin && p.Y == m_Ymin)
-                        {
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
-                            {
-                                View.ShiftSelect();
-                            }
-                            else
-                            {
-                                View.Select();
-                            }
-                        }
-                        else
-                        {
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
-                            {
-                                MultiDragEvent(m_Xmax, m_Ymax, 1);
-                            }
-                            else
-                            {
-                                DragEvent(m_Xmax, m_Ymax, 1);
-                            }
-                        }
-                        break;
-                    case CurrentAction3d.DynamicZooming:
-                        CurrentMode = CurrentAction3d.Nothing;
-                        break;
-                    case CurrentAction3d.WindowZooming:
-                        m_Xmax = p.X;
-                        m_Ymax = p.Y;
-                        int ValZWMin = 1;
-                        if (Math.Abs(m_Xmax - m_Xmin) > ValZWMin &&
-                             Math.Abs(m_Xmax - m_Ymax) > ValZWMin)
-                        {
-                            View.WindowFitAll(m_Xmin, m_Ymin, m_Xmax, m_Ymax);
-                        }
-                        RaiseZoomingFinished();
-                        CurrentMode = CurrentAction3d.Nothing;
-                        break;
-                    case CurrentAction3d.DynamicPanning:
-                        CurrentMode = CurrentAction3d.Nothing;
-                        break;
-                    case CurrentAction3d.GlobalPanning:
-                        View.Place(p.X, p.Y, m_CurZoom);
-                        CurrentMode = CurrentAction3d.Nothing;
-                        break;
-                    case CurrentAction3d.DynamicRotation:
-                        CurrentMode = CurrentAction3d.Nothing;
-                        if (!DegenerateMode)
-                        {
-                            View.SetDegenerateModeOff();
-                        }
-                        else
-                        {
-                            View.SetDegenerateModeOn();
-                        }
-                        break;
-                    default:
-                        break;
-                }
+                case ActionStatus.PickSelection:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    View.Select();
+                    SelectionChanged();
+                    break;
+                case ActionStatus.XorPickSelection:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    View.ShiftSelect();
+                    SelectionChanged();
+                    break;
+                case ActionStatus.RectangleSelection:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    View.EndRubberBand();
+                    int Height = (int)(((System.Windows.FrameworkElement)sender).ActualHeight * DpiScaleY);
+                    View.Select(m_Xmin, Height - m_Ymin, m_Xmax, Height - m_Ymax);
+                    SelectionChanged();
+                    break;
+                case ActionStatus.WindowZooming:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    int ValZWMin = 1;
+                    View.EndRubberBand();
+                    if (Math.Abs(m_Xmax - m_Xmin) > ValZWMin && Math.Abs(m_Xmax - m_Ymax) > ValZWMin)
+                    {
+                        View.WindowFitAll(m_Xmin, m_Ymin, m_Xmax, m_Ymax);
+                    }
+                    RaiseZoomingFinished();
+                    break;
+                case ActionStatus.DynamicZooming:
+                    break;
+                case ActionStatus.DynamicPanning:
+                    break;
+                case ActionStatus.DynamicRotation:
+                    if (!DegenerateMode)
+                    {
+                        View.SetDegenerateModeOff();
+                    }
+                    else
+                    {
+                        View.SetDegenerateModeOn();
+                    }
+                    break;
+                case ActionStatus.PopupMenu:
+                    if (sender is Grid aGrid)
+                    {
+                        aGrid.ContextMenu.Visibility = System.Windows.Visibility.Visible;
+                        aGrid.ContextMenu.IsOpen = true;
+                    }
+                    break;
+                default:
+                    break;
             }
-            else if (e.ChangedButton == MouseButton.Right)
-            {
-                if (!DegenerateMode)
-                {
-                    View.SetDegenerateModeOff();
-                }
-                else
-                {
-                    View.SetDegenerateModeOn();
-                }
-            }
-
-            SelectionChanged();
+            m_CurrentAction = ActionStatus.None;
+            m_CurrentActionOverride = ActionStatus.None;
         }
 
-        public void OnMouseMove(System.Windows.IInputElement sender, System.Windows.Input.MouseEventArgs e)
+        public void HandleMouseMove(System.Windows.IInputElement sender, System.Windows.Input.MouseEventArgs e)
         {
-            System.Windows.DpiScale dpi = System.Windows.Media.VisualTreeHelper.GetDpi((System.Windows.Media.Visual)sender);
-            Point p = new((int)(e.GetPosition(sender).X * dpi.DpiScaleX), (int)(e.GetPosition(sender).Y * dpi.DpiScaleY));
+            var (DpiScaleX, DpiScaleY) = GetDpiScale(sender);
+            Point p = new((int)(e.GetPosition(sender).X * DpiScaleX), (int)(e.GetPosition(sender).Y * DpiScaleY));
 
-            if (e.LeftButton == MouseButtonState.Pressed) //left button is pressed
+            switch (m_CurrentAction)
             {
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
+                case ActionStatus.None:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    View.MoveTo(p.X, p.Y);
+                    break;
+                case ActionStatus.RectangleSelection:
+                case ActionStatus.WindowZooming:
+                    m_Xmax = p.X;
+                    m_Ymax = p.Y;
+                    int Height = (int)(((System.Windows.FrameworkElement)sender).ActualHeight * DpiScaleY);
+                    View.UpdateRubberBand(m_Xmin, Height - m_Ymin, m_Xmax, Height - m_Ymax);
+                    Debug.WriteLine($"RubberBand:{m_Xmin}, {Height - m_Ymin}, {m_Xmax}, {Height - m_Ymax}");
+                    break;
+                case ActionStatus.DynamicZooming:
                     View.Zoom(m_Xmax, m_Ymax, p.X, p.Y);
                     m_Xmax = p.X;
                     m_Ymax = p.Y;
-                }
-                else
-                {
-                    switch (CurrentMode)
-                    {
-                        case CurrentAction3d.Nothing:
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            break;
-                        case CurrentAction3d.DynamicZooming:
-                            View.Zoom(m_Xmax, m_Ymax, p.X, p.Y);
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            break;
-                        case CurrentAction3d.WindowZooming:
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            break;
-                        case CurrentAction3d.DynamicPanning:
-                            View.Pan(p.X - m_Xmax, m_Ymax - p.Y);
-                            m_Xmax = p.X;
-                            m_Ymax = p.Y;
-                            break;
-                        case CurrentAction3d.GlobalPanning:
-                            break;
-                        case CurrentAction3d.DynamicRotation:
-                            View.Rotation(p.X, p.Y);
-                            View.RedrawView();
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            else if (e.MiddleButton == MouseButtonState.Pressed) //middle button is pressed
-            {
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
+                    break;
+                case ActionStatus.DynamicPanning:
                     View.Pan(p.X - m_Xmax, m_Ymax - p.Y);
                     m_Xmax = p.X;
                     m_Ymax = p.Y;
-                }
-            }
-            else if (e.RightButton == MouseButtonState.Pressed) //right button is pressed
-            {
-                if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                {
+                    break;
+                case ActionStatus.DynamicRotation:
                     View.Rotation(p.X, p.Y);
-                }
-            }
-            else // no buttons are pressed
-            {
-                m_Xmax = p.X;
-                m_Ymax = p.Y;
-                View.MoveTo(p.X, p.Y);
+                    View.RedrawView();
+                    break;
+                default:
+                    break;
             }
         }
+        #endregion
     }
 }

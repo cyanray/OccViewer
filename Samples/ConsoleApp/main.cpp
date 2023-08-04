@@ -116,6 +116,7 @@ AISObjects MakePolygon()
     TopoDS_Wire wire = BRepBuilderAPI_MakePolygon(point1, point2, point3, point4 , Standard_True);
     Handle(AIS_ColoredShape) aisFace = new AIS_ColoredShape(BRepBuilderAPI_MakeFace(wire, Standard_True).Shape());
     aisFace->SetColor(Quantity_Color(Quantity_NOC_RED));
+    aisFace->SetDisplayMode(1);
     result.Append(aisFace);
     return result;
 }
