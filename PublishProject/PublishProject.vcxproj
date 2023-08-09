@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Utility</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -125,11 +125,14 @@ copy /Y "$(SolutionDir)OccViewer.ViewerProxy\inlcude" "$(SolutionDir)Publish\$(C
       <Command>mkdir "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
 mkdir "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
 mkdir "$(SolutionDir)Publish\$(ConfigurationName)\include\" &amp;
-copy /Y "$(OutDir)*.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
-copy /Y "$(OutDir)*.exe" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
-copy /Y "$(OutDir)*.runtimeconfig.json" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
-copy /Y "$(OutDir)*.lib" "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
-copy /Y "$(SolutionDir)OccViewer.ViewerProxy\include\*" "$(SolutionDir)Publish\$(ConfigurationName)\include\"</Command>
+copy /Y "$(OutDir)OccViewer.*.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)OccViewer.*.runtimeconfig.json" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)Ijwhost.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)FluentIcons.WPF.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)FluentIcons.Common.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)OccViewer.*.lib" "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
+copy /Y "$(SolutionDir)OccViewer.ViewerProxy\include\*" "$(SolutionDir)Publish\$(ConfigurationName)\include\"
+copy /Y "$(SolutionDir)PublishProject\CMakeLists.txt" "$(SolutionDir)Publish\$(ConfigurationName)\"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,13 +151,21 @@ copy /Y "$(SolutionDir)OccViewer.ViewerProxy\include\*" "$(SolutionDir)Publish\$
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>copy /Y "$(OutDir)*.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
-copy /Y "$(OutDir)*.exe" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
-copy /Y "$(OutDir)*.lib" "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
-copy /Y "$(SolutionDir)OccViewer.ViewerProxy\inlcude" "$(SolutionDir)Publish\$(ConfigurationName)\"</Command>
+      <Command>mkdir "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+mkdir "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
+mkdir "$(SolutionDir)Publish\$(ConfigurationName)\include\" &amp;
+copy /Y "$(OutDir)OccViewer.*.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)OccViewer.*.runtimeconfig.json" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)Ijwhost.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)FluentIcons.WPF.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)FluentIcons.Common.dll" "$(SolutionDir)Publish\$(ConfigurationName)\bin\" &amp;
+copy /Y "$(OutDir)OccViewer.*.lib" "$(SolutionDir)Publish\$(ConfigurationName)\lib\" &amp;
+copy /Y "$(SolutionDir)OccViewer.ViewerProxy\include\*" "$(SolutionDir)Publish\$(ConfigurationName)\include\"
+copy /Y "$(SolutionDir)PublishProject\CMakeLists.txt" "$(SolutionDir)Publish\$(ConfigurationName)\"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
