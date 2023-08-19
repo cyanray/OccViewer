@@ -18,4 +18,4 @@ target_link_libraries(${PROJECT_NAME} INTERFACE ${OpenCASCADE_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} INTERFACE "OccViewer.ViewerProxy.lib")
 
 install(DIRECTORY "${OCCVIEWER_BIN_DIR}/" TYPE BIN)
-install(DIRECTORY "${OpenCASCADE_BINARY_DIR}$<$<CONFIG:Debug>:d>$<$<CONFIG:Release>:i>/" TYPE BIN)
+install(DIRECTORY "${OpenCASCADE_BINARY_DIR}$<$<CONFIG:Debug>:d>$<$<CONFIG:Release>:i>$<$<CONFIG:RelWithDebInfo>:i>/" TYPE BIN)
