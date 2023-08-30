@@ -28,8 +28,8 @@ namespace OccViewer.Viewer
         {
             Viewer = new OCCViewer();
 
-            m_D3DImage.IsFrontBufferAvailableChanged
-              += new DependencyPropertyChangedEventHandler(OnIsFrontBufferAvailableChanged);
+            m_D3DImage.IsFrontBufferAvailableChanged += 
+                new DependencyPropertyChangedEventHandler(OnIsFrontBufferAvailableChanged);
 
             BeginRenderingScene();
         }
@@ -55,23 +55,21 @@ namespace OccViewer.Viewer
         private void BeginRenderingScene()
         {
             if (m_IsFailed) return;
+            if (!m_D3DImage.IsFrontBufferAvailable) return;
 
-            if (m_D3DImage.IsFrontBufferAvailable)
+            if (!Viewer.InitViewer())
             {
-                if (!Viewer.InitViewer())
-                {
-                    // TODO: handle error
-                    MessageBox.Show("Failed to initialize OpenGL-Direct3D interoperability!",
-                      "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                // TODO: handle error
+                MessageBox.Show("Failed to initialize OpenGL-Direct3D interoperability!",
+                  "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
-                    m_IsFailed = true;
-                    return;
-                }
-
-                // Leverage the Rendering event of WPF composition
-                // target to update the our custom Direct3D scene
-                CompositionTarget.Rendering += OnRendering;
+                m_IsFailed = true;
+                return;
             }
+
+            // Leverage the Rendering event of WPF composition
+            // target to update the our custom Direct3D scene
+            CompositionTarget.Rendering += OnRendering;
         }
 
         /// <summary> Releases Direct3D-OCCT rendering. </summary>
